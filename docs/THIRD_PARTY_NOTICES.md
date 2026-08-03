@@ -1,17 +1,24 @@
 # Avisos de terceros
 
-> Este documento se completará en la Fase 2, cuando se integre el SDK de
-> Liblinphone, con la versión exacta utilizada y el texto de su licencia tal
-> como se distribuye en esa versión.
+## Liblinphone SDK
 
-## Pendiente de completar
+- **Artefacto**: `org.linphone:linphone-sdk-android:5.5.13` (empaquetado
+  `.aar`, incluye las librerías nativas `liblinphone.so`, `libmediastreamer2.so`,
+  `libortp.so`, `libbctoolbox.so`, `libsrtp2.so`, entre otras).
+- **Repositorio Maven oficial**: `https://download.linphone.org/maven_repository`
+  (anunciado en
+  [linphone.org/en/news/liblinphone-sdk-available-through-git-maven-repository](https://www.linphone.org/en/news/liblinphone-sdk-available-through-git-maven-repository/)).
+- **Origen**: `https://gitlab.linphone.org/BC/public/linphone-sdk` (según el
+  POM del artefacto).
+- **Licencia declarada en el POM de la versión 5.5.13**: GNU General Public
+  License, versión 3.0 (<https://www.gnu.org/licenses/gpl-3.0.en.html>).
 
-- **Liblinphone SDK** — Belledonne Communications. Se documentará aquí:
-  la versión exacta integrada, la URL del repositorio Maven oficial usado,
-  y el texto/enlace de su licencia (a verificar en la versión concreta, ya
-  que Liblinphone ha distribuido bajo distintas licencias según el
-  componente y la versión — GPLv3, y en algunos casos licencias comerciales
-  para ciertos módulos).
+La licencia de Liblinphone (GPLv3) y la de AMELI Softphone (AGPLv3) son
+compatibles: AGPLv3 es una variante de GPLv3 con una condición adicional para
+uso en red, por lo que un proyecto AGPLv3 puede enlazar con dependencias
+GPLv3.
+
+## Otras dependencias
 
 Ninguna otra dependencia de terceros usada en este proyecto (AndroidX,
 Kotlin, Jetpack Compose) impone obligaciones de atribución adicionales más

@@ -11,7 +11,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // El repositorio Maven de Liblinphone se añade en la Fase 2, tras verificar su URL oficial.
+        // Repositorio Maven oficial de Belledonne Communications (Liblinphone SDK).
+        // Verificado: https://www.linphone.org/en/news/liblinphone-sdk-available-through-git-maven-repository/
+        maven { url = uri("https://download.linphone.org/maven_repository") }
     }
 }
 

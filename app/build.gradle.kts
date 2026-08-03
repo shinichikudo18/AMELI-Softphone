@@ -58,6 +58,7 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.datastore.preferences)
     implementation(libs.androidx.security.crypto)
+    implementation(libs.linphone.sdk.android)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
