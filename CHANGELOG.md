@@ -7,6 +7,16 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Añadido
 
+- Identidad visual de marca: ícono adaptativo generado a partir del logo
+  oficial de AMELI (fondo navy `#0A1A33` + el avatar circular como
+  foreground, escalado a la "safe zone" de 66/108dp para no recortarse en
+  ninguna forma de máscara). Paleta de la app (`Color.kt`/`Theme.kt`)
+  actualizada a navy/cian de marca, con `dynamicColor` desactivado por
+  defecto para que Android 12+ no la reemplace por los colores dinámicos
+  del fondo de pantalla. El logo se muestra también dentro de la app en la
+  pantalla principal, junto a un indicador de estado de registro con
+  semáforo de color.
+
 - Fase 3: registro de cuenta SIP. `SipAccountManager` construye
   `AccountParams`/`Account`/`AuthInfo` reales y los registra en el `Core`.
   `PreferencesRepository` (DataStore) persiste la configuración no sensible;

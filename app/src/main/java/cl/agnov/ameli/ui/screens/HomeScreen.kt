@@ -2,12 +2,21 @@
 
 package cl.agnov.ameli.ui.screens
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -18,7 +27,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import cl.agnov.ameli.R
 import cl.agnov.ameli.sip.LinphoneManager
 import cl.agnov.ameli.sip.model.SipRegistrationState
 
@@ -40,13 +54,19 @@ fun HomeScreen(
                 .padding(innerPadding)
                 .fillMaxSize()
                 .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Text(
-                text = registrationState.toDisplayMessage(),
-                style = MaterialTheme.typography.titleMedium,
+            Image(
+                painter = painterResource(R.drawable.logo_ameli),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .size(120.dp)
+                    .clip(CircleShape),
             )
+
+            RegistrationStatusChip(registrationState)
 
             Button(
                 onClick = onOpenDialer,
@@ -65,6 +85,38 @@ fun HomeScreen(
             }
         }
     }
+}
+
+@Composable
+private fun RegistrationStatusChip(state: SipRegistrationState) {
+    Card(
+        shape = RoundedCornerShape(999.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .background(state.indicatorColor()),
+            )
+            Text(
+                text = state.toDisplayMessage(),
+                style = MaterialTheme.typography.bodyMedium,
+            )
+        }
+    }
+}
+
+private fun SipRegistrationState.indicatorColor(): Color = when (this) {
+    SipRegistrationState.REGISTERED -> Color(0xFF22C55E)
+    SipRegistrationState.REGISTERING -> Color(0xFFFACC15)
+    SipRegistrationState.NOT_REGISTERED, SipRegistrationState.DISCONNECTED -> Color(0xFF94A3B8)
+    else -> Color(0xFFEF4444)
 }
 
 private fun SipRegistrationState.toDisplayMessage(): String = when (this) {

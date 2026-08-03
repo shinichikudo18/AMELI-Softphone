@@ -11,21 +11,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
-    primary = AmeliGreen80,
-    secondary = AmeliGreenGrey80,
-    tertiary = AmeliTeal80,
+    primary = AmeliCyan,
+    onPrimary = AmeliNavyDeep,
+    secondary = AmeliNavyGrey80,
+    tertiary = AmeliCyanDeep80,
+    background = AmeliNavyDeep,
+    surface = AmeliNavy,
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = AmeliGreen40,
-    secondary = AmeliGreenGrey40,
-    tertiary = AmeliTeal40,
+    primary = AmeliCyanDeep,
+    secondary = AmeliNavyGrey40,
+    tertiary = AmeliCyan40,
 )
 
+/**
+ * Tema visual de AMELI Softphone. `dynamicColor` está desactivado por
+ * defecto para que la identidad de marca (navy + cian, del logo oficial) se
+ * mantenga consistente en vez de que Android 12+ la reemplace por los
+ * colores dinámicos del fondo de pantalla del sistema.
+ */
 @Composable
 fun AmeliTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val colorScheme = when {
