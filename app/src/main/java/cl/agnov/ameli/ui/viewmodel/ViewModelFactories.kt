@@ -36,4 +36,11 @@ object ViewModelFactories {
             ActiveCallViewModel(callController = app.container.callManager)
         }
     }
+
+    val incomingCall = viewModelFactory {
+        initializer {
+            val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as AmeliApplication
+            IncomingCallViewModel(callController = app.container.callManager)
+        }
+    }
 }

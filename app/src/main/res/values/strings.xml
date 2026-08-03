@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">AMELI Softphone</string>
+    <string name="notification_channel_incoming_call">Llamadas entrantes</string>
+    <string name="notification_channel_incoming_call_description">Notificaciones de llamadas SIP entrantes</string>
+    <string name="notification_incoming_call_title">Llamada entrante</string>
+    <string name="notification_action_answer">Contestar</string>
+    <string name="notification_action_decline">Rechazar</string>
 </resources>

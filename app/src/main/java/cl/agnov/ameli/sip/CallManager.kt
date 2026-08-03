@@ -7,11 +7,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.linphone.core.Call
+import org.linphone.core.Reason
 
 /** Permite sustituir [CallManager] por un fake en pruebas unitarias. */
 interface CallController {
     val callState: StateFlow<CallUiState?>
     fun call(addressOrNumber: String): Result<Unit>
+    fun answer(): Result<Unit>
+    fun decline(): Result<Unit>
     fun hangup()
     fun currentDurationSeconds(): Int
 }
@@ -41,6 +44,18 @@ class CallManager : CallController {
         val call = core.inviteAddress(address)
             ?: return Result.failure(IllegalStateException("No se pudo iniciar la llamada"))
         activeCall = call
+        return Result.success(Unit)
+    }
+
+    override fun answer(): Result<Unit> {
+        val call = activeCall ?: return Result.failure(IllegalStateException("No hay una llamada entrante"))
+        call.accept()
+        return Result.success(Unit)
+    }
+
+    override fun decline(): Result<Unit> {
+        val call = activeCall ?: return Result.failure(IllegalStateException("No hay una llamada entrante"))
+        call.decline(Reason.Declined)
         return Result.success(Unit)
     }
 

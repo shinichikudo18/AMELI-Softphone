@@ -1,6 +1,7 @@
 package cl.agnov.ameli
 
 import android.app.Application
+import cl.agnov.ameli.notification.CallNotificationController
 import cl.agnov.ameli.sip.LinphoneManager
 
 class AmeliApplication : Application() {
@@ -14,5 +15,6 @@ class AmeliApplication : Application() {
         // Temporal: a partir de la Fase 7, el ciclo de vida del Core pasa a
         // ser responsabilidad exclusiva de LinphoneService.
         LinphoneManager.start(this)
+        CallNotificationController(this, container.callManager.callState)
     }
 }

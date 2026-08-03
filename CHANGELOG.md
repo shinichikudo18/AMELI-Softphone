@@ -21,6 +21,15 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
   de `LinphoneManager`. Pantallas Dialer (teclado numérico) y Llamada activa
   (nombre remoto, duración en vivo, colgar). Se solicita el permiso
   `RECORD_AUDIO` justo antes de la primera llamada.
+- Fase 5: llamadas entrantes. `CallManager` gana `answer()`/`decline()`.
+  `CallNotificationController` observa el estado de llamada y muestra una
+  notificación de categoría CALL con pantalla completa (para desbloquear el
+  dispositivo) y acciones directas de contestar/rechazar vía
+  `IncomingCallActionReceiver`, sin necesidad de abrir la app. Pantalla
+  `IncomingCallScreen` y navegación automática hacia ella cuando llega una
+  llamada. Permisos `POST_NOTIFICATIONS` (Android 13+) y
+  `USE_FULL_SCREEN_INTENT`; `MainActivity` declara `showWhenLocked`/
+  `turnScreenOn` (API 27+, sin efecto pero inofensivo en API 26).
 
 - Fase 1: proyecto base compilable — módulo `app` con Kotlin, Jetpack Compose
   (Material 3), tema propio, pantalla de bienvenida y estructura MVVM inicial.

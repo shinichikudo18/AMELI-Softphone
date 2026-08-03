@@ -4,6 +4,7 @@ import android.content.Context
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.util.Base64
+import androidx.core.content.edit
 import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
@@ -40,10 +41,10 @@ class SecureCredentialStore(context: Context) : CredentialStore {
         }
         val ciphertext = cipher.doFinal(password.toByteArray(Charsets.UTF_8))
 
-        preferences.edit()
-            .putString(KEY_IV, Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
-            .putString(KEY_CIPHERTEXT, Base64.encodeToString(ciphertext, Base64.NO_WRAP))
-            .apply()
+        preferences.edit {
+            putString(KEY_IV, Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
+            putString(KEY_CIPHERTEXT, Base64.encodeToString(ciphertext, Base64.NO_WRAP))
+        }
     }
 
     override fun readPassword(): String? {
@@ -63,7 +64,10 @@ class SecureCredentialStore(context: Context) : CredentialStore {
     }
 
     override fun clear() {
-        preferences.edit().remove(KEY_IV).remove(KEY_CIPHERTEXT).apply()
+        preferences.edit {
+            remove(KEY_IV)
+            remove(KEY_CIPHERTEXT)
+        }
     }
 
     private fun getOrCreateKey(): SecretKey {
