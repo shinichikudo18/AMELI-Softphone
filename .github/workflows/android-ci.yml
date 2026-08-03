@@ -82,12 +82,21 @@ jobs:
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
 
+      # Si RELEASE_KEYSTORE_BASE64 no está configurado como secreto, este
+      # paso no hace nada y la firma de release cae de vuelta a la firma de
+      # debug (ver app/build.gradle.kts). La condición se evalúa en bash y
+      # no en `if:` porque GitHub Actions no permite referenciar `secrets`
+      # directamente en un `if:` de step (rompe el parseo del workflow).
       - name: Decode release keystore
         env:
           RELEASE_KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
         run: |
-          echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
-          echo "ANDROID_RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+          if [ -n "$RELEASE_KEYSTORE_BASE64" ]; then
+            echo "$RELEASE_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/release.keystore"
+            echo "ANDROID_RELEASE_KEYSTORE_PATH=$RUNNER_TEMP/release.keystore" >> "$GITHUB_ENV"
+          else
+            echo "No hay keystore de release configurado; se usará la firma de debug."
+          fi
 
       - name: Build release APK
         env:
