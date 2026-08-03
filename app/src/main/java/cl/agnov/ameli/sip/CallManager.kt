@@ -1,11 +1,18 @@
 package cl.agnov.ameli.sip
 
+import cl.agnov.ameli.data.CallHistoryRepository
 import cl.agnov.ameli.sip.model.CallConnectionState
 import cl.agnov.ameli.sip.model.CallDirection
+import cl.agnov.ameli.sip.model.CallHistoryRecord
+import cl.agnov.ameli.sip.model.CallResult
 import cl.agnov.ameli.sip.model.CallUiState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import org.linphone.core.Call
 import org.linphone.core.Reason
 
@@ -27,8 +34,11 @@ interface CallController {
  * [LinphoneManager] reenvía desde [org.linphone.core.CoreListenerStub].
  */
 class CallManager(
-    private val audioRouteController: AudioRouteController = AudioRouteManager(),
+    private val audioRouteController: AudioRouteController,
+    private val historyRepository: CallHistoryRepository,
 ) : CallController {
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val _callState = MutableStateFlow<CallUiState?>(null)
     override val callState: StateFlow<CallUiState?> = _callState.asStateFlow()
@@ -92,10 +102,28 @@ class CallManager(
         lastKnownState = state
         _callState.value = toUiState(call, state)
 
+        if (state == Call.State.Released) {
+            recordHistory(call)
+        }
+
         if (state == Call.State.End || state == Call.State.Released || state == Call.State.Error) {
             activeCall = null
             lastKnownState = null
         }
+    }
+
+    private fun recordHistory(call: Call) {
+        val log = call.callLog
+        val remoteAddress = log.remoteAddress
+        val record = CallHistoryRecord(
+            remoteAddress = remoteAddress.asStringUriOnly(),
+            remoteDisplayName = remoteAddress.displayName?.takeIf { it.isNotBlank() },
+            direction = if (log.dir == Call.Dir.Outgoing) CallDirection.OUTGOING else CallDirection.INCOMING,
+            startDateEpochSeconds = log.startDate,
+            durationSeconds = log.duration,
+            result = CallResult.from(log.status),
+        )
+        scope.launch { historyRepository.record(record) }
     }
 
     private fun refreshCallState() {

@@ -43,4 +43,11 @@ object ViewModelFactories {
             IncomingCallViewModel(callController = app.container.callManager)
         }
     }
+
+    val history = viewModelFactory {
+        initializer {
+            val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as AmeliApplication
+            HistoryViewModel(repository = app.container.callHistoryRepository)
+        }
+    }
 }

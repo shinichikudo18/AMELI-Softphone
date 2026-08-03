@@ -16,6 +16,7 @@ import cl.agnov.ameli.sip.model.CallConnectionState
 import cl.agnov.ameli.sip.model.CallDirection
 import cl.agnov.ameli.ui.screens.ActiveCallScreen
 import cl.agnov.ameli.ui.screens.DialerScreen
+import cl.agnov.ameli.ui.screens.HistoryScreen
 import cl.agnov.ameli.ui.screens.HomeScreen
 import cl.agnov.ameli.ui.screens.IncomingCallScreen
 import cl.agnov.ameli.ui.screens.SettingsScreen
@@ -26,6 +27,7 @@ object AmeliDestinations {
     const val DIALER = "dialer"
     const val ACTIVE_CALL = "active_call"
     const val INCOMING_CALL = "incoming_call"
+    const val HISTORY = "history"
 }
 
 @Composable
@@ -55,7 +57,11 @@ fun AmeliNavHost(
             HomeScreen(
                 onOpenSettings = { navController.navigate(AmeliDestinations.SETTINGS) },
                 onOpenDialer = { navController.navigate(AmeliDestinations.DIALER) },
+                onOpenHistory = { navController.navigate(AmeliDestinations.HISTORY) },
             )
+        }
+        composable(AmeliDestinations.HISTORY) {
+            HistoryScreen()
         }
         composable(AmeliDestinations.SETTINGS) {
             SettingsScreen(

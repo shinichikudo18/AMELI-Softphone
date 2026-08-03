@@ -46,6 +46,13 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
   `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_PHONE_CALL` y `MANAGE_OWN_CALLS`
   (este último requerido junto al tipo `phoneCall` al no ser la app un
   marcador/dialer por defecto).
+- Fase 8: historial y seguridad. `CallHistoryRepository`/`RoomCallHistoryRepository`
+  (Room, con KSP) guardan número remoto, dirección, fecha, duración y
+  resultado de cada llamada (`Call.CallLog`/`Call.Status` reales) al llegar
+  a `Call.State.Released`. Pantalla de historial con opción de borrar.
+  Revisión de seguridad: sin `Log`/`println` de datos sensibles, sin
+  `TrustManager`/`HostnameVerifier` personalizados que debiliten TLS, sin
+  credenciales hardcodeadas, `local.properties` confirmado fuera de git.
 
 - Fase 1: proyecto base compilable — módulo `app` con Kotlin, Jetpack Compose
   (Material 3), tema propio, pantalla de bienvenida y estructura MVVM inicial.

@@ -26,6 +26,7 @@ import cl.agnov.ameli.sip.model.SipRegistrationState
 fun HomeScreen(
     onOpenSettings: () -> Unit,
     onOpenDialer: () -> Unit,
+    onOpenHistory: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val registrationState by LinphoneManager.registrationState.collectAsState()
@@ -53,6 +54,10 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Marcar")
+            }
+
+            OutlinedButton(onClick = onOpenHistory, modifier = Modifier.fillMaxWidth()) {
+                Text("Historial de llamadas")
             }
 
             OutlinedButton(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
