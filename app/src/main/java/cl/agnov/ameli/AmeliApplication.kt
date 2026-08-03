@@ -4,8 +4,13 @@ import android.app.Application
 import cl.agnov.ameli.sip.LinphoneManager
 
 class AmeliApplication : Application() {
+
+    lateinit var container: AppContainer
+        private set
+
     override fun onCreate() {
         super.onCreate()
+        container = AppContainer(this)
         // Temporal: a partir de la Fase 7, el ciclo de vida del Core pasa a
         // ser responsabilidad exclusiva de LinphoneService.
         LinphoneManager.start(this)

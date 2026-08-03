@@ -22,7 +22,9 @@ parche antes de divulgar los detalles.
 ## Prácticas de seguridad aplicadas
 
 - Las credenciales SIP (usuario/contraseña) no se almacenan en texto plano:
-  se protegen usando Android Keystore / `androidx.security.crypto`.
+  se cifran con una clave AES-GCM generada y almacenada en Android Keystore
+  (`SecureCredentialStore`), no con `androidx.security.crypto`, que está
+  deprecado desde su versión 1.1.0.
 - No se registran contraseñas, tokens ni cabeceras de autenticación en logs.
 - La validación de certificados TLS nunca se desactiva; no se aceptan
   certificados no confiables por defecto.

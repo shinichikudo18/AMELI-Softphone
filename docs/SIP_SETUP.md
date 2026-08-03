@@ -1,8 +1,8 @@
 # Configuración de una cuenta SIP
 
-> Esta guía describe la configuración de cuenta SIP planeada para AMELI
-> Softphone. La pantalla de configuración se implementa en la Fase 3; hasta
-> entonces este documento sirve como referencia de los campos soportados.
+Desde la pantalla principal, toca "Configurar cuenta SIP" para acceder al
+formulario de configuración. Al guardar, la app aplica la configuración
+inmediatamente contra Liblinphone e intenta registrarse.
 
 ## Campos de configuración
 
