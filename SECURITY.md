@@ -33,5 +33,11 @@ parche antes de divulgar los detalles.
   sin secretos.
 - Los archivos sensibles (`local.properties`, keystores, `.env`) están
   excluidos vía `.gitignore`.
-- La firma de release en CI se lee desde GitHub Secrets, nunca desde archivos
-  versionados ni logs.
+- La firma de release en CI se lee desde GitHub Secrets (`RELEASE_KEYSTORE_BASE64`,
+  `RELEASE_KEYSTORE_PASSWORD`, `RELEASE_KEY_ALIAS`, `RELEASE_KEY_PASSWORD`),
+  nunca desde archivos versionados; el workflow no imprime su contenido en
+  los logs. Sin esos secretos configurados, el release se firma con la
+  firma de debug (solo para pruebas, no para publicar).
+- El historial local de llamadas (Room) guarda únicamente metadatos de la
+  llamada (número, fecha, duración, resultado), nunca contraseñas ni
+  contenido de la comunicación.

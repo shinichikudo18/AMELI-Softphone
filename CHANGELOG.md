@@ -53,6 +53,16 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
   Revisión de seguridad: sin `Log`/`println` de datos sensibles, sin
   `TrustManager`/`HostnameVerifier` personalizados que debiliten TLS, sin
   credenciales hardcodeadas, `local.properties` confirmado fuera de git.
+- Fase 9: CI/CD y documentación final. Workflow de GitHub Actions
+  (`.github/workflows/android-ci.yml`): build + tests + lint en cada push y
+  pull request a `main`, con el APK de debug publicado como artifact; en
+  cada tag `vX.Y.Z` compila un APK de release y crea una GitHub Release
+  adjuntándolo. La firma de release se lee desde GitHub Secrets
+  (`RELEASE_KEYSTORE_BASE64` y relacionados) sin imprimir su contenido en
+  los logs, con fallback a la firma de debug si no están configurados (para
+  que `assembleRelease` funcione en local sin secretos reales). Documentación
+  de compilación actualizada con instrucciones para descargar un APK ya
+  compilado y para configurar la firma de release.
 
 - Fase 1: proyecto base compilable — módulo `app` con Kotlin, Jetpack Compose
   (Material 3), tema propio, pantalla de bienvenida y estructura MVVM inicial.

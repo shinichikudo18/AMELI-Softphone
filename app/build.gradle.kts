@@ -18,6 +18,23 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Firma de release leída desde variables de entorno (GitHub Secrets en CI).
+    // Si no están presentes, se usa la firma de debug para que
+    // `./gradlew assembleRelease` siga funcionando en local sin secretos
+    // reales. Ver docs/BUILDING.md para configurar una firma de release
+    // propia.
+    val releaseStorePath = System.getenv("ANDROID_RELEASE_KEYSTORE_PATH")
+    val releaseKeystoreSigningConfig = if (releaseStorePath != null) {
+        signingConfigs.create("release") {
+            storeFile = file(releaseStorePath)
+            storePassword = System.getenv("ANDROID_RELEASE_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("ANDROID_RELEASE_KEY_ALIAS")
+            keyPassword = System.getenv("ANDROID_RELEASE_KEY_PASSWORD")
+        }
+    } else {
+        null
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -25,6 +42,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = releaseKeystoreSigningConfig ?: signingConfigs.getByName("debug")
         }
     }
 

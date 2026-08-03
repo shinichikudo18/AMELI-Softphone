@@ -19,7 +19,9 @@ independiente que consume el SDK de Liblinphone como dependencia.
 - [x] Fase 6 — Controles de audio en llamada activa (mute, altavoz, DTMF).
 - [x] Fase 7 — Servicio en segundo plano (`LinphoneService`).
 - [x] Fase 8 — Historial de llamadas y almacenamiento seguro de credenciales.
-- [ ] Fase 9 — CI/CD con GitHub Actions y documentación completa.
+- [x] Fase 9 — CI/CD con GitHub Actions y documentación completa.
+
+[![Android CI](https://github.com/shinichikudo18/AMELI-Softphone/actions/workflows/android-ci.yml/badge.svg)](https://github.com/shinichikudo18/AMELI-Softphone/actions/workflows/android-ci.yml)
 
 ## Requisitos
 
@@ -37,7 +39,9 @@ cp local.properties.example local.properties
 ./gradlew assembleDebug
 ```
 
-Ver [docs/BUILDING.md](docs/BUILDING.md) para más detalle.
+Ver [docs/BUILDING.md](docs/BUILDING.md) para más detalle, incluyendo cómo
+descargar un APK ya compilado desde Actions/Releases sin necesidad de
+compilar localmente.
 
 ## Configuración de una cuenta SIP
 
@@ -49,7 +53,13 @@ MVVM con `StateFlow` para exponer el estado de registro SIP y de llamadas a la
 capa de UI (Jetpack Compose). La lógica de SIP/VoIP está aislada de la UI en
 componentes dedicados (`LinphoneManager`, `LinphoneService`, `SipAccountManager`,
 `CallManager`, `AudioRouteManager`, `LinphoneCoreListener`) para poder
-evolucionar o testear cada capa de forma independiente.
+evolucionar o testear cada capa de forma independiente. Los ViewModels
+(`DialerViewModel`, `ActiveCallViewModel`, `IncomingCallViewModel`,
+`SettingsViewModel`, `HistoryViewModel`) dependen de interfaces pequeñas
+(`AccountPreferencesStore`, `CredentialStore`, `AccountConfigurator`,
+`CallController`, `CallHistoryRepository`) en vez de las clases concretas,
+para poder probarse con fakes sin tocar Android/Keystore/DataStore/Room
+reales.
 
 ## Seguridad
 
