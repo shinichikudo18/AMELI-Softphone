@@ -10,6 +10,10 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Requerido para mostrar la pantalla de llamada entrante con el dispositivo bloqueado. -->
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
+    <!-- Requerido por LinphoneService para ejecutarse como foreground service de tipo llamada. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.MANAGE_OWN_CALLS" />
 
     <application
         android:name=".AmeliApplication"
@@ -35,6 +39,11 @@
         <receiver
             android:name=".notification.IncomingCallActionReceiver"
             android:exported="false" />
+
+        <service
+            android:name=".service.LinphoneService"
+            android:exported="false"
+            android:foregroundServiceType="phoneCall" />
     </application>
 
 </manifest>

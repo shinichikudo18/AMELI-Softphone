@@ -36,6 +36,16 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
   `Earpiece`). `CallManager` gana `toggleMute()`, `toggleSpeaker()` y
   `sendDtmf()` (`Call.sendDtmf`). `ActiveCallScreen` añade botones de
   silenciar/altavoz y un teclado DTMF colapsable.
+- Fase 7: segundo plano. `LinphoneService` (foreground service,
+  `foregroundServiceType="phoneCall"`) pasa a ser el único responsable de
+  arrancar/detener `LinphoneManager` (antes lo hacía `AmeliApplication`
+  directamente, como se dejó anotado desde la Fase 2). Canal de notificación
+  de baja importancia para el servicio, separado del canal de llamadas
+  entrantes. Se registra un `ConnectivityManager.NetworkCallback` que llama a
+  `Core.refreshRegisters()` cuando vuelve la red. Permisos
+  `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_PHONE_CALL` y `MANAGE_OWN_CALLS`
+  (este último requerido junto al tipo `phoneCall` al no ser la app un
+  marcador/dialer por defecto).
 
 - Fase 1: proyecto base compilable — módulo `app` con Kotlin, Jetpack Compose
   (Material 3), tema propio, pantalla de bienvenida y estructura MVVM inicial.

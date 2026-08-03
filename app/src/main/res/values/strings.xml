@@ -6,4 +6,8 @@
     <string name="notification_incoming_call_title">Llamada entrante</string>
     <string name="notification_action_answer">Contestar</string>
     <string name="notification_action_decline">Rechazar</string>
+    <string name="notification_channel_service">Servicio SIP</string>
+    <string name="notification_channel_service_description">Mantiene la cuenta SIP registrada en segundo plano</string>
+    <string name="notification_service_title">AMELI Softphone activo</string>
+    <string name="notification_service_description">Manteniendo la cuenta SIP registrada</string>
 </resources>

@@ -1,8 +1,10 @@
 package cl.agnov.ameli
 
 import android.app.Application
+import android.content.Intent
+import androidx.core.content.ContextCompat
 import cl.agnov.ameli.notification.CallNotificationController
-import cl.agnov.ameli.sip.LinphoneManager
+import cl.agnov.ameli.service.LinphoneService
 
 class AmeliApplication : Application() {
 
@@ -12,9 +14,7 @@ class AmeliApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
-        // Temporal: a partir de la Fase 7, el ciclo de vida del Core pasa a
-        // ser responsabilidad exclusiva de LinphoneService.
-        LinphoneManager.start(this)
         CallNotificationController(this, container.callManager.callState)
+        ContextCompat.startForegroundService(this, Intent(this, LinphoneService::class.java))
     }
 }
