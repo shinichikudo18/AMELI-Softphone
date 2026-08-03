@@ -1,0 +1,29 @@
+# Gradle
+.gradle/
+build/
+app/build/
+*/build/
+
+# Local configuration — nunca subir (contiene rutas/credenciales locales)
+local.properties
+*.keystore
+*.jks
+keystore.properties
+signing.properties
+*.env
+.env*
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Logs
+*.log
+
+# Wrapper (se conserva el jar y properties, no el cache local)
+!gradle/wrapper/gradle-wrapper.jar
+!gradle/wrapper/gradle-wrapper.properties
