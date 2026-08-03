@@ -3,6 +3,7 @@ package cl.agnov.ameli
 import android.content.Context
 import cl.agnov.ameli.data.PreferencesRepository
 import cl.agnov.ameli.data.SecureCredentialStore
+import cl.agnov.ameli.sip.CallManager
 import cl.agnov.ameli.sip.SipAccountManager
 
 /**
@@ -15,4 +16,5 @@ class AppContainer(context: Context) {
     val preferencesRepository = PreferencesRepository(context.applicationContext)
     val secureCredentialStore = SecureCredentialStore(context.applicationContext)
     val sipAccountManager = SipAccountManager()
+    val callManager = CallManager()
 }

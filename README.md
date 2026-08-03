@@ -12,9 +12,9 @@ independiente que consume el SDK de Liblinphone como dependencia.
 ## Características (versión 0.1.0 — solo audio)
 
 - [x] Fase 1 — Proyecto base compilable (Kotlin, Compose, MVVM).
-- [ ] Fase 2 — Integración de Liblinphone SDK.
-- [ ] Fase 3 — Registro de cuenta SIP con estado en tiempo real.
-- [ ] Fase 4 — Llamadas salientes con teclado numérico.
+- [x] Fase 2 — Integración de Liblinphone SDK.
+- [x] Fase 3 — Registro de cuenta SIP con estado en tiempo real.
+- [x] Fase 4 — Llamadas salientes con teclado numérico.
 - [ ] Fase 5 — Llamadas entrantes con notificación y pantalla dedicada.
 - [ ] Fase 6 — Controles de audio en llamada activa (mute, altavoz, DTMF).
 - [ ] Fase 7 — Servicio en segundo plano (`LinphoneService`).

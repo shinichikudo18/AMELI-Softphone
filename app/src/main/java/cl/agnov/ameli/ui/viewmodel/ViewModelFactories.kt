@@ -19,4 +19,21 @@ object ViewModelFactories {
             )
         }
     }
+
+    val dialer = viewModelFactory {
+        initializer {
+            val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as AmeliApplication
+            DialerViewModel(
+                callController = app.container.callManager,
+                registrationState = LinphoneManager.registrationState,
+            )
+        }
+    }
+
+    val activeCall = viewModelFactory {
+        initializer {
+            val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as AmeliApplication
+            ActiveCallViewModel(callController = app.container.callManager)
+        }
+    }
 }

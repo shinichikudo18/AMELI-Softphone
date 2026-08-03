@@ -15,6 +15,12 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
   1.1.0). Pantallas de inicio y configuración con Jetpack Navigation Compose.
   `SettingsViewModel` con pruebas unitarias usando fakes de las interfaces
   `AccountPreferencesStore`, `CredentialStore` y `AccountConfigurator`.
+- Fase 4: llamadas salientes. `CallManager` construye la dirección SIP con
+  `Account.normalizeSipUri`, inicia la llamada con `Core.inviteAddress` y
+  expone el estado en tiempo real (`CallUiState`) a partir de los callbacks
+  de `LinphoneManager`. Pantallas Dialer (teclado numérico) y Llamada activa
+  (nombre remoto, duración en vivo, colgar). Se solicita el permiso
+  `RECORD_AUDIO` justo antes de la primera llamada.
 
 - Fase 1: proyecto base compilable — módulo `app` con Kotlin, Jetpack Compose
   (Material 3), tema propio, pantalla de bienvenida y estructura MVVM inicial.

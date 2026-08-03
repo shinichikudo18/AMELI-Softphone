@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
@@ -24,6 +25,7 @@ import cl.agnov.ameli.sip.model.SipRegistrationState
 @Composable
 fun HomeScreen(
     onOpenSettings: () -> Unit,
+    onOpenDialer: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val registrationState by LinphoneManager.registrationState.collectAsState()
@@ -44,6 +46,14 @@ fun HomeScreen(
                 text = registrationState.toDisplayMessage(),
                 style = MaterialTheme.typography.titleMedium,
             )
+
+            Button(
+                onClick = onOpenDialer,
+                enabled = registrationState == SipRegistrationState.REGISTERED,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Marcar")
+            }
 
             OutlinedButton(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
                 Text("Configurar cuenta SIP")

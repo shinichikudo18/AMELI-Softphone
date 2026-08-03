@@ -4,6 +4,8 @@
     <!-- Requerido por Liblinphone para el registro y la señalización SIP. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- Requerido para capturar audio durante una llamada. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
 
     <application
         android:name=".AmeliApplication"
