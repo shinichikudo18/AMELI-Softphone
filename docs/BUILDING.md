@@ -74,3 +74,9 @@ release propia, añade estos secretos en GitHub
 
 El workflow nunca imprime el contenido de estos secretos en los logs; solo
 decodifica el keystore a un archivo temporal del runner.
+
+> **Nota**: GitHub Actions no permite referenciar el contexto `secrets`
+> directamente en un `if:` de step (el workflow falla al parsear, con error
+> genérico "workflow file issue" y 0 jobs creados). Por eso la comprobación
+> de si `RELEASE_KEYSTORE_BASE64` está configurado se hace en bash dentro
+> del `run:`, no en `if:`.
