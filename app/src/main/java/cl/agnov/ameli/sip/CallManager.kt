@@ -16,6 +16,9 @@ interface CallController {
     fun answer(): Result<Unit>
     fun decline(): Result<Unit>
     fun hangup()
+    fun toggleMute()
+    fun toggleSpeaker()
+    fun sendDtmf(digit: Char): Result<Unit>
     fun currentDurationSeconds(): Int
 }
 
@@ -23,12 +26,15 @@ interface CallController {
  * Gestiona el ciclo de vida de la llamada activa a partir de los eventos que
  * [LinphoneManager] reenvía desde [org.linphone.core.CoreListenerStub].
  */
-class CallManager : CallController {
+class CallManager(
+    private val audioRouteController: AudioRouteController = AudioRouteManager(),
+) : CallController {
 
     private val _callState = MutableStateFlow<CallUiState?>(null)
     override val callState: StateFlow<CallUiState?> = _callState.asStateFlow()
 
     private var activeCall: Call? = null
+    private var lastKnownState: Call.State? = null
 
     init {
         LinphoneManager.onCallStateChanged = { call, state, _ -> onCallStateChanged(call, state) }
@@ -63,15 +69,39 @@ class CallManager : CallController {
         activeCall?.terminate()
     }
 
+    override fun toggleMute() {
+        audioRouteController.setMicMuted(!audioRouteController.isMicMuted())
+        refreshCallState()
+    }
+
+    override fun toggleSpeaker() {
+        audioRouteController.setSpeakerEnabled(!audioRouteController.isSpeakerOn())
+        refreshCallState()
+    }
+
+    override fun sendDtmf(digit: Char): Result<Unit> {
+        val call = activeCall ?: return Result.failure(IllegalStateException("No hay una llamada activa"))
+        call.sendDtmf(digit)
+        return Result.success(Unit)
+    }
+
     override fun currentDurationSeconds(): Int = activeCall?.duration ?: 0
 
     private fun onCallStateChanged(call: Call, state: Call.State) {
         activeCall = call
+        lastKnownState = state
         _callState.value = toUiState(call, state)
 
         if (state == Call.State.End || state == Call.State.Released || state == Call.State.Error) {
             activeCall = null
+            lastKnownState = null
         }
+    }
+
+    private fun refreshCallState() {
+        val call = activeCall ?: return
+        val state = lastKnownState ?: return
+        _callState.value = toUiState(call, state)
     }
 
     private fun toUiState(call: Call, state: Call.State): CallUiState {
@@ -82,6 +112,8 @@ class CallManager : CallController {
             remoteDisplayName = remoteAddress.displayName?.takeIf { it.isNotBlank() },
             connectionState = CallConnectionState.from(state),
             durationSeconds = call.duration,
+            isMicMuted = audioRouteController.isMicMuted(),
+            isSpeakerOn = audioRouteController.isSpeakerOn(),
         )
     }
 }

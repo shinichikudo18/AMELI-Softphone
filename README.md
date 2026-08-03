@@ -16,7 +16,7 @@ independiente que consume el SDK de Liblinphone como dependencia.
 - [x] Fase 3 — Registro de cuenta SIP con estado en tiempo real.
 - [x] Fase 4 — Llamadas salientes con teclado numérico.
 - [x] Fase 5 — Llamadas entrantes con notificación y pantalla dedicada.
-- [ ] Fase 6 — Controles de audio en llamada activa (mute, altavoz, DTMF).
+- [x] Fase 6 — Controles de audio en llamada activa (mute, altavoz, DTMF).
 - [ ] Fase 7 — Servicio en segundo plano (`LinphoneService`).
 - [ ] Fase 8 — Historial de llamadas y almacenamiento seguro de credenciales.
 - [ ] Fase 9 — CI/CD con GitHub Actions y documentación completa.

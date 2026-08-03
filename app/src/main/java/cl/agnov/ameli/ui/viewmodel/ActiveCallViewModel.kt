@@ -35,4 +35,16 @@ class ActiveCallViewModel(
     fun hangup() {
         callController.hangup()
     }
+
+    fun toggleMute() {
+        callController.toggleMute()
+    }
+
+    fun toggleSpeaker() {
+        callController.toggleSpeaker()
+    }
+
+    fun sendDtmf(digit: Char) {
+        callController.sendDtmf(digit)
+    }
 }

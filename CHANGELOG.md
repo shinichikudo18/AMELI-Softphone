@@ -30,6 +30,12 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
   llamada. Permisos `POST_NOTIFICATIONS` (Android 13+) y
   `USE_FULL_SCREEN_INTENT`; `MainActivity` declara `showWhenLocked`/
   `turnScreenOn` (API 27+, sin efecto pero inofensivo en API 26).
+- Fase 6: audio en llamada activa. `AudioRouteManager` controla el silencio
+  del micrófono (`Core.isMicEnabled`) y la ruta de salida (`Core.audioDevices`
+  / `Core.outputAudioDevice`, alternando entre `AudioDevice.Type.Speaker` y
+  `Earpiece`). `CallManager` gana `toggleMute()`, `toggleSpeaker()` y
+  `sendDtmf()` (`Call.sendDtmf`). `ActiveCallScreen` añade botones de
+  silenciar/altavoz y un teclado DTMF colapsable.
 
 - Fase 1: proyecto base compilable — módulo `app` con Kotlin, Jetpack Compose
   (Material 3), tema propio, pantalla de bienvenida y estructura MVVM inicial.

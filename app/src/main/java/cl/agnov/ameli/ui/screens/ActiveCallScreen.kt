@@ -2,17 +2,22 @@ package cl.agnov.ameli.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -21,6 +26,13 @@ import cl.agnov.ameli.sip.model.CallConnectionState
 import cl.agnov.ameli.ui.viewmodel.ActiveCallViewModel
 import cl.agnov.ameli.ui.viewmodel.ViewModelFactories
 
+private val DTMF_KEYS = listOf(
+    listOf('1', '2', '3'),
+    listOf('4', '5', '6'),
+    listOf('7', '8', '9'),
+    listOf('*', '0', '#'),
+)
+
 @Composable
 fun ActiveCallScreen(
     onCallEnded: () -> Unit,
@@ -28,6 +40,7 @@ fun ActiveCallScreen(
     viewModel: ActiveCallViewModel = viewModel(factory = ViewModelFactories.activeCall),
 ) {
     val callState by viewModel.uiState.collectAsState()
+    var showDialpad by remember { mutableStateOf(false) }
 
     LaunchedEffect(callState?.connectionState) {
         if (callState == null || callState?.connectionState == CallConnectionState.ENDED) {
@@ -62,6 +75,40 @@ fun ActiveCallScreen(
                 text = formatDuration(state.durationSeconds),
                 style = MaterialTheme.typography.titleLarge,
             )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedButton(onClick = viewModel::toggleMute, modifier = Modifier.weight(1f)) {
+                    Text(if (state.isMicMuted) "Reactivar mic" else "Silenciar")
+                }
+                OutlinedButton(onClick = viewModel::toggleSpeaker, modifier = Modifier.weight(1f)) {
+                    Text(if (state.isSpeakerOn) "Altavoz activado" else "Altavoz")
+                }
+            }
+
+            OutlinedButton(
+                onClick = { showDialpad = !showDialpad },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(if (showDialpad) "Ocultar teclado" else "Teclado DTMF")
+            }
+
+            if (showDialpad) {
+                DTMF_KEYS.forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                    ) {
+                        row.forEach { key ->
+                            OutlinedButton(onClick = { viewModel.sendDtmf(key) }) {
+                                Text(key.toString(), style = MaterialTheme.typography.headlineSmall)
+                            }
+                        }
+                    }
+                }
+            }
 
             Button(
                 onClick = viewModel::hangup,
