@@ -16,6 +16,9 @@ inmediatamente contra Liblinphone e intenta registrarse.
 | Nombre para mostrar | Nombre visible en llamadas salientes. |
 | SRTP | Activa cifrado de medios (SRTP) para las llamadas. |
 | STUN | Servidor STUN opcional para resolución NAT. |
+| ICE | Negociación de mejor ruta de medios (directa/STUN/TURN); recomendado si hay NAT de por medio. |
+| TURN | Servidor/usuario/contraseña TURN, para redes con NAT simétrico donde ICE por sí solo no basta. La contraseña se guarda cifrada igual que la SIP. |
+| Prioridad de códecs | Qué códecs de audio usar y en qué orden (Opus, PCMA, PCMU, G722). Los desmarcados quedan deshabilitados. |
 
 ## Recomendaciones de seguridad
 
@@ -31,3 +34,14 @@ La aplicación mostrará el estado de registro SIP en tiempo real, mapeando los
 estados internos de Liblinphone (`RegistrationState`) a mensajes
 comprensibles: registrado, registrando, desconectado, error de autenticación,
 servidor no disponible y error de certificado.
+
+Si el registro falla por servidor no disponible o un error desconocido, la
+app reintenta automáticamente con backoff exponencial (2s, 4s, 8s... hasta un
+máximo de 60s). No reintenta automáticamente ante errores de autenticación o
+de certificado, ya que esos requieren corregir la configuración, no reintentar.
+
+## Estadísticas de la llamada
+
+Durante una llamada activa, la app muestra en tiempo real el códec en uso,
+pérdida de paquetes, jitter, RTT y el estado de la conexión ICE (directa, vía
+STUN o vía TURN/relay).

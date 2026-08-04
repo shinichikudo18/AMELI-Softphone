@@ -2,11 +2,18 @@ package cl.agnov.ameli.sip
 
 import android.content.Context
 import cl.agnov.ameli.sip.model.SipRegistrationState
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import org.linphone.core.Account
 import org.linphone.core.Call
+import org.linphone.core.CallStats
 import org.linphone.core.Core
 import org.linphone.core.Factory
 import org.linphone.core.RegistrationState
@@ -22,12 +29,18 @@ object LinphoneManager {
 
     private var coreInstance: Core? = null
     private var listener: LinphoneCoreListener? = null
+    private val managerScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private var retryJob: Job? = null
+    private var retryAttempt = 0
 
     private val _registrationState = MutableStateFlow(SipRegistrationState.NOT_REGISTERED)
     val registrationState: StateFlow<SipRegistrationState> = _registrationState.asStateFlow()
 
     /** Callback interno usado por [CallManager] para recibir cambios de estado de llamada. */
     var onCallStateChanged: ((Call, Call.State, String?) -> Unit)? = null
+
+    /** Callback interno usado por [CallManager] para recibir estadísticas de la llamada en curso. */
+    var onCallStatsUpdated: ((Call, CallStats) -> Unit)? = null
 
     val isStarted: Boolean
         get() = coreInstance != null
@@ -41,7 +54,7 @@ object LinphoneManager {
         val appContext = context.applicationContext
         val newListener = LinphoneCoreListener(
             onAccountRegistrationStateChanged = { account, state, message ->
-                _registrationState.value = SipRegistrationState.from(state, account.error, message)
+                onRegistrationStateChanged(account, state, message)
             },
             onCallStateChanged = { call, state, message ->
                 onCallStateChanged?.invoke(call, state, message)
@@ -50,6 +63,9 @@ object LinphoneManager {
                 if (reachable) {
                     coreInstance?.refreshRegisters()
                 }
+            },
+            onCallStatsUpdated = { call, stats ->
+                onCallStatsUpdated?.invoke(call, stats)
             },
         )
 
@@ -64,10 +80,52 @@ object LinphoneManager {
 
     fun stop() {
         val runningCore = coreInstance ?: return
+        cancelRetry()
         listener?.let { runningCore.removeListener(it) }
         runningCore.stop()
         listener = null
         coreInstance = null
         _registrationState.value = SipRegistrationState.NOT_REGISTERED
     }
+
+    private fun onRegistrationStateChanged(account: Account, state: RegistrationState, message: String?) {
+        val newState = SipRegistrationState.from(state, account.error, message)
+        _registrationState.value = newState
+
+        when (newState) {
+            // Fallas de red/servidor: reintentar con backoff exponencial.
+            SipRegistrationState.SERVER_UNAVAILABLE, SipRegistrationState.UNKNOWN_ERROR -> scheduleRetry()
+            // Registrado, registrando, desconectado deliberadamente, error de
+            // credenciales o de certificado: no tiene sentido reintentar solo,
+            // así que se cancela cualquier backoff pendiente y se reinicia el
+            // contador para el próximo fallo real.
+            else -> cancelRetry()
+        }
+    }
+
+    private fun scheduleRetry() {
+        if (retryJob?.isActive == true) return
+
+        val delayMs = backoffDelayMillis(retryAttempt)
+        retryAttempt++
+        retryJob = managerScope.launch {
+            delay(delayMs)
+            coreInstance?.refreshRegisters()
+        }
+    }
+
+    private fun cancelRetry() {
+        retryJob?.cancel()
+        retryJob = null
+        retryAttempt = 0
+    }
+
+    private fun backoffDelayMillis(attempt: Int): Long {
+        val exponentialMillis = BASE_RETRY_DELAY_MS * (1L shl attempt.coerceAtMost(MAX_BACKOFF_SHIFT))
+        return exponentialMillis.coerceAtMost(MAX_RETRY_DELAY_MS)
+    }
+
+    private const val BASE_RETRY_DELAY_MS = 2_000L
+    private const val MAX_RETRY_DELAY_MS = 60_000L
+    private const val MAX_BACKOFF_SHIFT = 5
 }

@@ -2,6 +2,7 @@ package cl.agnov.ameli.sip
 
 import org.linphone.core.Account
 import org.linphone.core.Call
+import org.linphone.core.CallStats
 import org.linphone.core.Core
 import org.linphone.core.CoreListenerStub
 import org.linphone.core.RegistrationState
@@ -14,6 +15,7 @@ class LinphoneCoreListener(
     private val onAccountRegistrationStateChanged: (Account, RegistrationState, String?) -> Unit,
     private val onCallStateChanged: (Call, Call.State, String?) -> Unit,
     private val onNetworkReachableChanged: (Boolean) -> Unit,
+    private val onCallStatsUpdated: (Call, CallStats) -> Unit = { _, _ -> },
 ) : CoreListenerStub() {
 
     override fun onAccountRegistrationStateChanged(
@@ -31,5 +33,9 @@ class LinphoneCoreListener(
 
     override fun onNetworkReachable(core: Core, reachable: Boolean) {
         onNetworkReachableChanged.invoke(reachable)
+    }
+
+    override fun onCallStatsUpdated(core: Core, call: Call, stats: CallStats) {
+        onCallStatsUpdated.invoke(call, stats)
     }
 }

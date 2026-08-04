@@ -4,8 +4,10 @@ import cl.agnov.ameli.data.CallHistoryRepository
 import cl.agnov.ameli.sip.model.CallConnectionState
 import cl.agnov.ameli.sip.model.CallDirection
 import cl.agnov.ameli.sip.model.CallHistoryRecord
+import cl.agnov.ameli.sip.model.CallQualityStats
 import cl.agnov.ameli.sip.model.CallResult
 import cl.agnov.ameli.sip.model.CallUiState
+import cl.agnov.ameli.sip.model.IceConnectionState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -14,11 +16,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.linphone.core.Call
+import org.linphone.core.CallStats
 import org.linphone.core.Reason
+import org.linphone.core.StreamType
 
 /** Permite sustituir [CallManager] por un fake en pruebas unitarias. */
 interface CallController {
     val callState: StateFlow<CallUiState?>
+    val callQualityStats: StateFlow<CallQualityStats?>
     fun call(addressOrNumber: String): Result<Unit>
     fun answer(): Result<Unit>
     fun decline(): Result<Unit>
@@ -43,11 +48,15 @@ class CallManager(
     private val _callState = MutableStateFlow<CallUiState?>(null)
     override val callState: StateFlow<CallUiState?> = _callState.asStateFlow()
 
+    private val _callQualityStats = MutableStateFlow<CallQualityStats?>(null)
+    override val callQualityStats: StateFlow<CallQualityStats?> = _callQualityStats.asStateFlow()
+
     private var activeCall: Call? = null
     private var lastKnownState: Call.State? = null
 
     init {
         LinphoneManager.onCallStateChanged = { call, state, _ -> onCallStateChanged(call, state) }
+        LinphoneManager.onCallStatsUpdated = { call, stats -> onCallStatsUpdated(call, stats) }
     }
 
     override fun call(addressOrNumber: String): Result<Unit> {
@@ -109,7 +118,20 @@ class CallManager(
         if (state == Call.State.End || state == Call.State.Released || state == Call.State.Error) {
             activeCall = null
             lastKnownState = null
+            _callQualityStats.value = null
         }
+    }
+
+    private fun onCallStatsUpdated(call: Call, stats: CallStats) {
+        if (call != activeCall || stats.type != StreamType.Audio) return
+
+        _callQualityStats.value = CallQualityStats(
+            codecName = call.currentParams.usedAudioPayloadType?.mimeType,
+            packetLossPercent = stats.receiverLossRate,
+            jitterSeconds = stats.receiverInterarrivalJitter,
+            roundTripSeconds = stats.roundTripDelay,
+            iceState = IceConnectionState.from(stats.iceState),
+        )
     }
 
     private fun recordHistory(call: Call) {

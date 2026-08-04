@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import cl.agnov.ameli.sip.model.AudioCodec
 import cl.agnov.ameli.sip.model.SipAccountPreferences
 import cl.agnov.ameli.sip.model.SipTransport
 import kotlinx.coroutines.flow.Flow
@@ -22,7 +23,7 @@ interface AccountPreferencesStore {
 
 /**
  * Persiste la configuración de la cuenta SIP que no es sensible (todo salvo
- * la contraseña, que vive en [SecureCredentialStore]).
+ * las contraseñas, que viven en [SecureCredentialStore]).
  */
 class PreferencesRepository(private val context: Context) : AccountPreferencesStore {
 
@@ -35,6 +36,11 @@ class PreferencesRepository(private val context: Context) : AccountPreferencesSt
         val SRTP_ENABLED = booleanPreferencesKey("sip_srtp_enabled")
         val STUN_ENABLED = booleanPreferencesKey("sip_stun_enabled")
         val STUN_SERVER = stringPreferencesKey("sip_stun_server")
+        val ICE_ENABLED = booleanPreferencesKey("sip_ice_enabled")
+        val TURN_ENABLED = booleanPreferencesKey("sip_turn_enabled")
+        val TURN_SERVER = stringPreferencesKey("sip_turn_server")
+        val TURN_USERNAME = stringPreferencesKey("sip_turn_username")
+        val CODEC_PRIORITY = stringPreferencesKey("sip_codec_priority")
     }
 
     override val accountPreferences: Flow<SipAccountPreferences?> = context.dataStore.data.map { prefs ->
@@ -52,6 +58,12 @@ class PreferencesRepository(private val context: Context) : AccountPreferencesSt
             srtpEnabled = prefs[Keys.SRTP_ENABLED] ?: false,
             stunEnabled = prefs[Keys.STUN_ENABLED] ?: false,
             stunServer = prefs[Keys.STUN_SERVER] ?: "",
+            iceEnabled = prefs[Keys.ICE_ENABLED] ?: false,
+            turnEnabled = prefs[Keys.TURN_ENABLED] ?: false,
+            turnServer = prefs[Keys.TURN_SERVER] ?: "",
+            turnUsername = prefs[Keys.TURN_USERNAME] ?: "",
+            codecPriority = prefs[Keys.CODEC_PRIORITY]?.let(::decodeCodecPriority)
+                ?: AudioCodec.DEFAULT_PRIORITY,
         )
     }
 
@@ -65,10 +77,21 @@ class PreferencesRepository(private val context: Context) : AccountPreferencesSt
             prefs[Keys.SRTP_ENABLED] = preferences.srtpEnabled
             prefs[Keys.STUN_ENABLED] = preferences.stunEnabled
             prefs[Keys.STUN_SERVER] = preferences.stunServer
+            prefs[Keys.ICE_ENABLED] = preferences.iceEnabled
+            prefs[Keys.TURN_ENABLED] = preferences.turnEnabled
+            prefs[Keys.TURN_SERVER] = preferences.turnServer
+            prefs[Keys.TURN_USERNAME] = preferences.turnUsername
+            prefs[Keys.CODEC_PRIORITY] = encodeCodecPriority(preferences.codecPriority)
         }
     }
 
     override suspend fun clearAccountPreferences() {
         context.dataStore.edit { it.clear() }
     }
+
+    private fun encodeCodecPriority(codecs: List<AudioCodec>): String = codecs.joinToString(",") { it.name }
+
+    private fun decodeCodecPriority(encoded: String): List<AudioCodec> = encoded.split(",")
+        .mapNotNull { runCatching { AudioCodec.valueOf(it) }.getOrNull() }
+        .ifEmpty { AudioCodec.DEFAULT_PRIORITY }
 }

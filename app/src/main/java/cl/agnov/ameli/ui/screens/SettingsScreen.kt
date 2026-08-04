@@ -11,11 +11,14 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -35,6 +38,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.agnov.ameli.sip.model.AudioCodec
 import cl.agnov.ameli.sip.model.SipTransport
 import cl.agnov.ameli.ui.viewmodel.SettingsUiState
 import cl.agnov.ameli.ui.viewmodel.SettingsViewModel
@@ -77,6 +81,13 @@ fun SettingsScreen(
             onSrtpEnabledChanged = viewModel::onSrtpEnabledChanged,
             onStunEnabledChanged = viewModel::onStunEnabledChanged,
             onStunServerChanged = viewModel::onStunServerChanged,
+            onIceEnabledChanged = viewModel::onIceEnabledChanged,
+            onTurnEnabledChanged = viewModel::onTurnEnabledChanged,
+            onTurnServerChanged = viewModel::onTurnServerChanged,
+            onTurnUsernameChanged = viewModel::onTurnUsernameChanged,
+            onTurnPasswordChanged = viewModel::onTurnPasswordChanged,
+            onCodecToggled = viewModel::onCodecToggled,
+            onCodecMoved = viewModel::onCodecMoved,
             onSave = viewModel::save,
             modifier = Modifier.padding(innerPadding),
         )
@@ -95,6 +106,13 @@ private fun SettingsForm(
     onSrtpEnabledChanged: (Boolean) -> Unit,
     onStunEnabledChanged: (Boolean) -> Unit,
     onStunServerChanged: (String) -> Unit,
+    onIceEnabledChanged: (Boolean) -> Unit,
+    onTurnEnabledChanged: (Boolean) -> Unit,
+    onTurnServerChanged: (String) -> Unit,
+    onTurnUsernameChanged: (String) -> Unit,
+    onTurnPasswordChanged: (String) -> Unit,
+    onCodecToggled: (AudioCodec, Boolean) -> Unit,
+    onCodecMoved: (AudioCodec, Int) -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -195,6 +213,9 @@ private fun SettingsForm(
             onCheckedChange = onSrtpEnabledChanged,
         )
 
+        HorizontalDivider()
+        Text(text = "NAT y conectividad", style = MaterialTheme.typography.titleSmall)
+
         SwitchRow(
             label = "Usar servidor STUN",
             checked = uiState.stunEnabled,
@@ -208,6 +229,61 @@ private fun SettingsForm(
                 label = { Text("Servidor STUN") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+            )
+        }
+
+        SwitchRow(
+            label = "Usar ICE (mejor traversal de NAT)",
+            checked = uiState.iceEnabled,
+            onCheckedChange = onIceEnabledChanged,
+        )
+
+        SwitchRow(
+            label = "Usar servidor TURN",
+            checked = uiState.turnEnabled,
+            onCheckedChange = onTurnEnabledChanged,
+        )
+
+        if (uiState.turnEnabled) {
+            OutlinedTextField(
+                value = uiState.turnServer,
+                onValueChange = onTurnServerChanged,
+                label = { Text("Servidor TURN (host:puerto)") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+            OutlinedTextField(
+                value = uiState.turnUsername,
+                onValueChange = onTurnUsernameChanged,
+                label = { Text("Usuario TURN") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+            )
+            OutlinedTextField(
+                value = uiState.turnPassword,
+                onValueChange = onTurnPasswordChanged,
+                label = { Text("Contraseña TURN") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            )
+        }
+
+        HorizontalDivider()
+        Text(text = "Prioridad de códecs de audio", style = MaterialTheme.typography.titleSmall)
+        Text(
+            text = "Desmarca los que no quieras usar; el orden de la lista es la prioridad.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+
+        AudioCodec.entries.forEach { codec ->
+            CodecRow(
+                codec = codec,
+                enabled = codec in uiState.codecPriority,
+                onToggle = { onCodecToggled(codec, it) },
+                onMoveUp = { onCodecMoved(codec, -1) },
+                onMoveDown = { onCodecMoved(codec, 1) },
             )
         }
 
@@ -234,5 +310,33 @@ private fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean
     ) {
         Text(text = label, style = MaterialTheme.typography.bodyLarge)
         Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+@Composable
+private fun CodecRow(
+    codec: AudioCodec,
+    enabled: Boolean,
+    onToggle: (Boolean) -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = enabled, onCheckedChange = onToggle)
+            Text(text = codec.name)
+        }
+        Row {
+            IconButton(onClick = onMoveUp) {
+                Text("▲")
+            }
+            IconButton(onClick = onMoveDown) {
+                Text("▼")
+            }
+        }
     }
 }

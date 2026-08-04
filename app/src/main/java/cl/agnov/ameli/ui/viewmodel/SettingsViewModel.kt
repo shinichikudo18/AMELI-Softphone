@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import cl.agnov.ameli.data.AccountPreferencesStore
 import cl.agnov.ameli.data.CredentialStore
 import cl.agnov.ameli.sip.AccountConfigurator
+import cl.agnov.ameli.sip.model.AudioCodec
 import cl.agnov.ameli.sip.model.SipAccountConfig
 import cl.agnov.ameli.sip.model.SipRegistrationState
 import cl.agnov.ameli.sip.model.SipTransport
@@ -24,6 +25,12 @@ data class SettingsUiState(
     val srtpEnabled: Boolean = false,
     val stunEnabled: Boolean = false,
     val stunServer: String = "",
+    val iceEnabled: Boolean = false,
+    val turnEnabled: Boolean = false,
+    val turnServer: String = "",
+    val turnUsername: String = "",
+    val turnPassword: String = "",
+    val codecPriority: List<AudioCodec> = AudioCodec.DEFAULT_PRIORITY,
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val saveError: String? = null,
@@ -60,6 +67,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             val savedPreferences = preferencesRepository.accountPreferences.first()
             val savedPassword = secureCredentialStore.readPassword()
+            val savedTurnPassword = secureCredentialStore.readTurnPassword()
             if (savedPreferences != null) {
                 _uiState.value = SettingsUiState(
                     username = savedPreferences.username,
@@ -71,6 +79,12 @@ class SettingsViewModel(
                     srtpEnabled = savedPreferences.srtpEnabled,
                     stunEnabled = savedPreferences.stunEnabled,
                     stunServer = savedPreferences.stunServer,
+                    iceEnabled = savedPreferences.iceEnabled,
+                    turnEnabled = savedPreferences.turnEnabled,
+                    turnServer = savedPreferences.turnServer,
+                    turnUsername = savedPreferences.turnUsername,
+                    turnPassword = savedTurnPassword.orEmpty(),
+                    codecPriority = savedPreferences.codecPriority,
                     isLoading = false,
                 )
             } else {
@@ -115,6 +129,46 @@ class SettingsViewModel(
         _uiState.value = _uiState.value.copy(stunServer = value, saveError = null, saveSucceeded = false)
     }
 
+    fun onIceEnabledChanged(value: Boolean) {
+        _uiState.value = _uiState.value.copy(iceEnabled = value, saveError = null, saveSucceeded = false)
+    }
+
+    fun onTurnEnabledChanged(value: Boolean) {
+        _uiState.value = _uiState.value.copy(turnEnabled = value, saveError = null, saveSucceeded = false)
+    }
+
+    fun onTurnServerChanged(value: String) {
+        _uiState.value = _uiState.value.copy(turnServer = value, saveError = null, saveSucceeded = false)
+    }
+
+    fun onTurnUsernameChanged(value: String) {
+        _uiState.value = _uiState.value.copy(turnUsername = value, saveError = null, saveSucceeded = false)
+    }
+
+    fun onTurnPasswordChanged(value: String) {
+        _uiState.value = _uiState.value.copy(turnPassword = value, saveError = null, saveSucceeded = false)
+    }
+
+    fun onCodecToggled(codec: AudioCodec, enabled: Boolean) {
+        val current = _uiState.value.codecPriority
+        val updated = if (enabled) {
+            if (codec in current) current else current + codec
+        } else {
+            current - codec
+        }
+        _uiState.value = _uiState.value.copy(codecPriority = updated, saveError = null, saveSucceeded = false)
+    }
+
+    fun onCodecMoved(codec: AudioCodec, delta: Int) {
+        val current = _uiState.value.codecPriority.toMutableList()
+        val index = current.indexOf(codec)
+        val newIndex = (index + delta).coerceIn(0, current.lastIndex)
+        if (index == -1 || index == newIndex) return
+        current.removeAt(index)
+        current.add(newIndex, codec)
+        _uiState.value = _uiState.value.copy(codecPriority = current, saveError = null, saveSucceeded = false)
+    }
+
     fun save() {
         val state = _uiState.value
         if (!state.isFormValid) {
@@ -132,6 +186,12 @@ class SettingsViewModel(
             srtpEnabled = state.srtpEnabled,
             stunEnabled = state.stunEnabled,
             stunServer = state.stunServer.trim(),
+            iceEnabled = state.iceEnabled,
+            turnEnabled = state.turnEnabled,
+            turnServer = state.turnServer.trim(),
+            turnUsername = state.turnUsername.trim(),
+            turnPassword = state.turnPassword,
+            codecPriority = state.codecPriority,
         )
 
         _uiState.value = state.copy(isSaving = true, saveError = null, saveSucceeded = false)
@@ -139,6 +199,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             preferencesRepository.saveAccountPreferences(config.toPreferences())
             secureCredentialStore.savePassword(config.password)
+            secureCredentialStore.saveTurnPassword(config.turnPassword)
 
             val result = sipAccountManager.applyAccount(config)
             _uiState.value = _uiState.value.copy(

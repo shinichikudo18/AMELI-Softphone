@@ -3,6 +3,7 @@ package cl.agnov.ameli.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.agnov.ameli.sip.CallController
+import cl.agnov.ameli.sip.model.CallQualityStats
 import cl.agnov.ameli.sip.model.CallUiState
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -31,6 +32,8 @@ class ActiveCallViewModel(
         secondTicker(),
     ) { call, _ -> call?.copy(durationSeconds = callController.currentDurationSeconds()) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), callController.callState.value)
+
+    val qualityStats: StateFlow<CallQualityStats?> = callController.callQualityStats
 
     fun hangup() {
         callController.hangup()

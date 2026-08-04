@@ -15,12 +15,15 @@ import javax.crypto.spec.GCMParameterSpec
 interface CredentialStore {
     fun savePassword(password: String)
     fun readPassword(): String?
+    fun saveTurnPassword(password: String)
+    fun readTurnPassword(): String?
     fun clear()
 }
 
 /**
- * Almacena la contraseña SIP cifrada con una clave AES-GCM guardada en
- * Android Keystore. Nunca se guarda en texto plano ni se registra en logs.
+ * Almacena credenciales (contraseña SIP y, opcionalmente, contraseña TURN)
+ * cifradas con una clave AES-GCM guardada en Android Keystore. Nunca se
+ * guardan en texto plano ni se registran en logs.
  *
  * `androidx.security.crypto` (EncryptedSharedPreferences/MasterKey) está
  * marcado `@Deprecated` desde la versión 1.1.0 en favor de usar
@@ -35,21 +38,38 @@ class SecureCredentialStore(context: Context) : CredentialStore {
 
     private val secretKey: SecretKey by lazy { getOrCreateKey() }
 
-    override fun savePassword(password: String) {
-        val cipher = Cipher.getInstance(TRANSFORMATION).apply {
-            init(Cipher.ENCRYPT_MODE, secretKey)
-        }
-        val ciphertext = cipher.doFinal(password.toByteArray(Charsets.UTF_8))
+    override fun savePassword(password: String) = save(KEY_SIP_IV, KEY_SIP_CIPHERTEXT, password)
 
+    override fun readPassword(): String? = read(KEY_SIP_IV, KEY_SIP_CIPHERTEXT)
+
+    override fun saveTurnPassword(password: String) = save(KEY_TURN_IV, KEY_TURN_CIPHERTEXT, password)
+
+    override fun readTurnPassword(): String? = read(KEY_TURN_IV, KEY_TURN_CIPHERTEXT)
+
+    override fun clear() {
         preferences.edit {
-            putString(KEY_IV, Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
-            putString(KEY_CIPHERTEXT, Base64.encodeToString(ciphertext, Base64.NO_WRAP))
+            remove(KEY_SIP_IV)
+            remove(KEY_SIP_CIPHERTEXT)
+            remove(KEY_TURN_IV)
+            remove(KEY_TURN_CIPHERTEXT)
         }
     }
 
-    override fun readPassword(): String? {
-        val ivEncoded = preferences.getString(KEY_IV, null) ?: return null
-        val ciphertextEncoded = preferences.getString(KEY_CIPHERTEXT, null) ?: return null
+    private fun save(ivKey: String, ciphertextKey: String, value: String) {
+        val cipher = Cipher.getInstance(TRANSFORMATION).apply {
+            init(Cipher.ENCRYPT_MODE, secretKey)
+        }
+        val ciphertext = cipher.doFinal(value.toByteArray(Charsets.UTF_8))
+
+        preferences.edit {
+            putString(ivKey, Base64.encodeToString(cipher.iv, Base64.NO_WRAP))
+            putString(ciphertextKey, Base64.encodeToString(ciphertext, Base64.NO_WRAP))
+        }
+    }
+
+    private fun read(ivKey: String, ciphertextKey: String): String? {
+        val ivEncoded = preferences.getString(ivKey, null) ?: return null
+        val ciphertextEncoded = preferences.getString(ciphertextKey, null) ?: return null
 
         return try {
             val iv = Base64.decode(ivEncoded, Base64.NO_WRAP)
@@ -60,13 +80,6 @@ class SecureCredentialStore(context: Context) : CredentialStore {
             String(cipher.doFinal(ciphertext), Charsets.UTF_8)
         } catch (e: Exception) {
             null
-        }
-    }
-
-    override fun clear() {
-        preferences.edit {
-            remove(KEY_IV)
-            remove(KEY_CIPHERTEXT)
         }
     }
 
@@ -93,7 +106,9 @@ class SecureCredentialStore(context: Context) : CredentialStore {
         const val TRANSFORMATION = "AES/GCM/NoPadding"
         const val GCM_TAG_LENGTH_BITS = 128
         const val FILE_NAME = "ameli_secure_credentials"
-        const val KEY_IV = "sip_password_iv"
-        const val KEY_CIPHERTEXT = "sip_password_ciphertext"
+        const val KEY_SIP_IV = "sip_password_iv"
+        const val KEY_SIP_CIPHERTEXT = "sip_password_ciphertext"
+        const val KEY_TURN_IV = "turn_password_iv"
+        const val KEY_TURN_CIPHERTEXT = "turn_password_ciphertext"
     }
 }

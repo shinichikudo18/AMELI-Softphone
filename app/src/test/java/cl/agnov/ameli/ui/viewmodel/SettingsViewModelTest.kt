@@ -41,14 +41,23 @@ private class FakeAccountPreferencesStore(
 
 private class FakeCredentialStore(initialPassword: String? = null) : CredentialStore {
     private var password: String? = initialPassword
+    private var turnPassword: String? = null
+
     override fun savePassword(password: String) {
         this.password = password
     }
 
     override fun readPassword(): String? = password
 
+    override fun saveTurnPassword(password: String) {
+        turnPassword = password
+    }
+
+    override fun readTurnPassword(): String? = turnPassword
+
     override fun clear() {
         password = null
+        turnPassword = null
     }
 }
 

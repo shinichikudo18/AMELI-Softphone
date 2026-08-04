@@ -3,6 +3,21 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
+## [Unreleased]
+
+### Añadido
+
+- Mejoras de calidad de llamada y NAT: ICE independiente de STUN, soporte de
+  servidor TURN (con credenciales cifradas igual que la contraseña SIP) y
+  prioridad de códecs de audio configurable (`Core.setAudioPayloadTypes`).
+  Estadísticas de llamada en tiempo real (códec en uso, pérdida de paquetes,
+  jitter, RTT, estado ICE) vía `CoreListenerStub.onCallStatsUpdated`,
+  mostradas en la pantalla de llamada activa.
+- Confiabilidad de conexión: `LinphoneManager` reintenta el registro SIP con
+  backoff exponencial (2s→60s) cuando falla por servidor no disponible o
+  error desconocido; no reintenta ante errores de autenticación o
+  certificado, que requieren corrección manual.
+
 ## [0.1.1]
 
 ### Añadido

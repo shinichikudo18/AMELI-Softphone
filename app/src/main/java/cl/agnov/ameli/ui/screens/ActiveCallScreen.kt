@@ -23,6 +23,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.agnov.ameli.sip.model.CallConnectionState
+import cl.agnov.ameli.sip.model.CallQualityStats
+import cl.agnov.ameli.sip.model.IceConnectionState
 import cl.agnov.ameli.ui.viewmodel.ActiveCallViewModel
 import cl.agnov.ameli.ui.viewmodel.ViewModelFactories
 
@@ -40,6 +42,7 @@ fun ActiveCallScreen(
     viewModel: ActiveCallViewModel = viewModel(factory = ViewModelFactories.activeCall),
 ) {
     val callState by viewModel.uiState.collectAsState()
+    val qualityStats by viewModel.qualityStats.collectAsState()
     var showDialpad by remember { mutableStateOf(false) }
 
     LaunchedEffect(callState?.connectionState) {
@@ -75,6 +78,8 @@ fun ActiveCallScreen(
                 text = formatDuration(state.durationSeconds),
                 style = MaterialTheme.typography.titleLarge,
             )
+
+            qualityStats?.let { QualityStatsRow(it) }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -118,6 +123,34 @@ fun ActiveCallScreen(
             }
         }
     }
+}
+
+@Composable
+private fun QualityStatsRow(stats: CallQualityStats) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = listOfNotNull(
+                stats.codecName?.let { "Códec: $it" },
+                "Pérdida: %.1f%%".format(stats.packetLossPercent),
+                "Jitter: %.3fs".format(stats.jitterSeconds),
+                "RTT: %.3fs".format(stats.roundTripSeconds),
+            ).joinToString("  ·  "),
+            style = MaterialTheme.typography.labelSmall,
+        )
+        Text(
+            text = "ICE: ${stats.iceState.toDisplayText()}",
+            style = MaterialTheme.typography.labelSmall,
+        )
+    }
+}
+
+private fun IceConnectionState.toDisplayText(): String = when (this) {
+    IceConnectionState.NOT_ACTIVATED -> "no activo"
+    IceConnectionState.IN_PROGRESS -> "negociando…"
+    IceConnectionState.HOST -> "directo"
+    IceConnectionState.REFLEXIVE -> "vía STUN"
+    IceConnectionState.RELAY -> "vía TURN (relay)"
+    IceConnectionState.FAILED -> "falló"
 }
 
 private fun formatDuration(totalSeconds: Int): String {
