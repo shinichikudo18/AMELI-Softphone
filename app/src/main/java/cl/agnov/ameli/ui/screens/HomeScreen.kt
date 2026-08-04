@@ -2,6 +2,8 @@
 
 package cl.agnov.ameli.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -21,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -30,11 +34,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.agnov.ameli.R
 import cl.agnov.ameli.sip.LinphoneManager
 import cl.agnov.ameli.sip.model.SipRegistrationState
+import cl.agnov.ameli.ui.viewmodel.UpdateViewModel
+import cl.agnov.ameli.ui.viewmodel.ViewModelFactories
 
 @Composable
 fun HomeScreen(
@@ -42,8 +50,33 @@ fun HomeScreen(
     onOpenDialer: () -> Unit,
     onOpenHistory: () -> Unit,
     modifier: Modifier = Modifier,
+    updateViewModel: UpdateViewModel = viewModel(factory = ViewModelFactories.update),
 ) {
     val registrationState by LinphoneManager.registrationState.collectAsState()
+    val availableUpdate by updateViewModel.availableUpdate.collectAsState()
+    val context = LocalContext.current
+
+    availableUpdate?.let { release ->
+        AlertDialog(
+            onDismissRequest = updateViewModel::dismiss,
+            title = { Text("Nueva versión disponible") },
+            text = { Text("Hay una nueva versión (v${release.versionName}) de AMELI Softphone lista para descargar.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    val url = release.apkDownloadUrl ?: release.releaseUrl
+                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    updateViewModel.dismiss()
+                }) {
+                    Text("Descargar")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = updateViewModel::dismiss) {
+                    Text("Ahora no")
+                }
+            },
+        )
+    }
 
     Scaffold(
         modifier = modifier,

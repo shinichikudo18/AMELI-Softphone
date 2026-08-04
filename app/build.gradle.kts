@@ -16,6 +16,8 @@ android {
         versionName = "0.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "GITHUB_REPO", "\"shinichikudo18/AMELI-Softphone\"")
     }
 
     // Firma de release leída desde variables de entorno (GitHub Secrets en CI).
@@ -53,6 +55,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     packaging {

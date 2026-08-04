@@ -9,6 +9,8 @@ import cl.agnov.ameli.data.db.AmeliDatabase
 import cl.agnov.ameli.sip.AudioRouteManager
 import cl.agnov.ameli.sip.CallManager
 import cl.agnov.ameli.sip.SipAccountManager
+import cl.agnov.ameli.update.UpdateChecker
+import cl.agnov.ameli.update.UpdateDismissalStore
 
 /**
  * Contenedor manual de dependencias de la aplicación. Se evita un framework
@@ -23,4 +25,6 @@ class AppContainer(context: Context) {
     val callHistoryRepository: CallHistoryRepository =
         RoomCallHistoryRepository(AmeliDatabase.getInstance(context.applicationContext).callHistoryDao())
     val callManager = CallManager(AudioRouteManager(), callHistoryRepository)
+    val updateChecker = UpdateChecker(BuildConfig.VERSION_NAME)
+    val updateDismissalStore = UpdateDismissalStore(context.applicationContext)
 }

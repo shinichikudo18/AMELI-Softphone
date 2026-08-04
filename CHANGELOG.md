@@ -7,6 +7,11 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Añadido
 
+- Aviso de actualización: al abrir la app se consulta la última GitHub
+  Release (`UpdateChecker`, vía `org.json` — sin dependencias nuevas) y, si
+  hay una versión más nueva, se muestra un diálogo para descargarla
+  directamente (abre el APK del asset o la página de la Release). Recuerda
+  la versión rechazada para no insistir con la misma (`UpdateDismissalStore`).
 - Mejoras de calidad de llamada y NAT: ICE independiente de STUN, soporte de
   servidor TURN (con credenciales cifradas igual que la contraseña SIP) y
   prioridad de códecs de audio configurable (`Core.setAudioPayloadTypes`).

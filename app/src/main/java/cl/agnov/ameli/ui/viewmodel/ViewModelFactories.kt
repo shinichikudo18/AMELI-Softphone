@@ -50,4 +50,14 @@ object ViewModelFactories {
             HistoryViewModel(repository = app.container.callHistoryRepository)
         }
     }
+
+    val update = viewModelFactory {
+        initializer {
+            val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as AmeliApplication
+            UpdateViewModel(
+                updateChecker = app.container.updateChecker,
+                dismissalStore = app.container.updateDismissalStore,
+            )
+        }
+    }
 }
