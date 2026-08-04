@@ -3,6 +3,26 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
+## [Unreleased]
+
+### Corregido
+
+- Prioridad de códecs en Configuración: la lista se renderizaba siempre en
+  el orden fijo del enum `AudioCodec.entries` en vez de `uiState.codecPriority`,
+  así que reordenar con ▲▼ no tenía ningún efecto visible aunque el estado
+  interno sí cambiaba. Ahora la lista se arma a partir de
+  `uiState.codecPriority` (los desmarcados quedan al final); además ▲▼ se
+  deshabilitan para códecs desmarcados.
+
+### Cambiado
+
+- Pantallas de llamada (activa y entrante): en vez de mostrar la URI SIP
+  cruda (`sip:203@192.168.1.1:5060`) como título cuando no hay nombre de
+  contacto, se muestra solo el número/usuario ("203"). Se agrega un avatar
+  circular con la inicial. Las estadísticas técnicas (códec, pérdida,
+  jitter, RTT, ICE) y la dirección SIP completa pasan a un panel "Detalles
+  de llamada" colapsable (oculto por defecto), en vez de mostrarse siempre.
+
 ## [0.2.0]
 
 ### Añadido

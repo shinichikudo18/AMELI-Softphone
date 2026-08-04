@@ -1,11 +1,16 @@
 package cl.agnov.ameli.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -15,6 +20,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -24,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.agnov.ameli.sip.model.CallConnectionState
@@ -53,6 +60,7 @@ fun ActiveCallScreen(
     var showDialpad by remember { mutableStateOf(false) }
     var showSecondCallInput by remember { mutableStateOf(false) }
     var showTransferInput by remember { mutableStateOf(false) }
+    var showDetails by remember { mutableStateOf(false) }
 
     LaunchedEffect(callState?.connectionState) {
         if (callState == null || callState?.connectionState == CallConnectionState.ENDED) {
@@ -75,8 +83,10 @@ fun ActiveCallScreen(
                 return@Column
             }
 
+            CallerAvatar(label = friendlyCallerLabel(state))
+
             Text(
-                text = state.remoteDisplayName ?: state.remoteAddress,
+                text = friendlyCallerLabel(state),
                 style = MaterialTheme.typography.headlineSmall,
             )
             Text(
@@ -88,7 +98,13 @@ fun ActiveCallScreen(
                 style = MaterialTheme.typography.titleLarge,
             )
 
-            qualityStats?.let { QualityStatsRow(it) }
+            TextButton(onClick = { showDetails = !showDetails }) {
+                Text(if (showDetails) "Ocultar detalles de llamada" else "Detalles de llamada")
+            }
+
+            if (showDetails) {
+                CallDetailsCard(state = state, stats = qualityStats)
+            }
 
             secondaryCallState?.let { secondary ->
                 SecondaryCallCard(
@@ -198,6 +214,23 @@ fun ActiveCallScreen(
 }
 
 @Composable
+private fun CallerAvatar(label: String) {
+    Box(
+        modifier = Modifier
+            .size(88.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label.take(1).uppercase(),
+            style = MaterialTheme.typography.headlineMedium,
+            color = MaterialTheme.colorScheme.onPrimaryContainer,
+        )
+    }
+}
+
+@Composable
 private fun AddressInputRow(label: String, confirmLabel: String, onConfirm: (String) -> Unit) {
     var value by remember { mutableStateOf("") }
     Row(
@@ -219,6 +252,38 @@ private fun AddressInputRow(label: String, confirmLabel: String, onConfirm: (Str
 }
 
 @Composable
+private fun CallDetailsCard(state: CallUiState, stats: CallQualityStats?) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            Text(text = "Dirección SIP: ${state.remoteAddress}", style = MaterialTheme.typography.labelSmall)
+            if (stats != null) {
+                HorizontalDivider()
+                Text(
+                    text = listOfNotNull(
+                        stats.codecName?.let { "Códec: $it" },
+                        "Pérdida: %.1f%%".format(stats.packetLossPercent),
+                        "Jitter: %.3fs".format(stats.jitterSeconds),
+                        "RTT: %.3fs".format(stats.roundTripSeconds),
+                    ).joinToString("  ·  "),
+                    style = MaterialTheme.typography.labelSmall,
+                )
+                Text(
+                    text = "Conexión: ${stats.iceState.toDisplayText()}",
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun SecondaryCallCard(
     secondary: CallUiState,
     onAnswer: () -> Unit,
@@ -229,6 +294,7 @@ private fun SecondaryCallCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
         Column(
@@ -236,7 +302,7 @@ private fun SecondaryCallCard(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                text = secondary.remoteDisplayName ?: secondary.remoteAddress,
+                text = friendlyCallerLabel(secondary),
                 style = MaterialTheme.typography.bodyLarge,
             )
             Text(
@@ -274,25 +340,6 @@ private fun SecondaryCallCard(
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun QualityStatsRow(stats: CallQualityStats) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = listOfNotNull(
-                stats.codecName?.let { "Códec: $it" },
-                "Pérdida: %.1f%%".format(stats.packetLossPercent),
-                "Jitter: %.3fs".format(stats.jitterSeconds),
-                "RTT: %.3fs".format(stats.roundTripSeconds),
-            ).joinToString("  ·  "),
-            style = MaterialTheme.typography.labelSmall,
-        )
-        Text(
-            text = "ICE: ${stats.iceState.toDisplayText()}",
-            style = MaterialTheme.typography.labelSmall,
-        )
     }
 }
 

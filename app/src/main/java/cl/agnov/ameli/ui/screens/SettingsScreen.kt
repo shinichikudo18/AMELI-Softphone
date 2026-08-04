@@ -11,6 +11,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -277,7 +279,11 @@ private fun SettingsForm(
             style = MaterialTheme.typography.bodySmall,
         )
 
-        AudioCodec.entries.forEach { codec ->
+        // El orden visual debe reflejar uiState.codecPriority (lo que el
+        // usuario reordenó), no el orden fijo de declaración del enum; los
+        // códecs desmarcados se listan al final.
+        val orderedCodecs = uiState.codecPriority + AudioCodec.entries.filterNot { it in uiState.codecPriority }
+        orderedCodecs.forEach { codec ->
             CodecRow(
                 codec = codec,
                 enabled = codec in uiState.codecPriority,
@@ -321,21 +327,28 @@ private fun CodecRow(
     onMoveUp: () -> Unit,
     onMoveDown: () -> Unit,
 ) {
-    Row(
+    Card(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Checkbox(checked = enabled, onCheckedChange = onToggle)
-            Text(text = codec.name)
-        }
-        Row {
-            IconButton(onClick = onMoveUp) {
-                Text("▲")
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(checked = enabled, onCheckedChange = onToggle)
+                Text(text = codec.name)
             }
-            IconButton(onClick = onMoveDown) {
-                Text("▼")
+            Row {
+                IconButton(onClick = onMoveUp, enabled = enabled) {
+                    Text("▲")
+                }
+                IconButton(onClick = onMoveDown, enabled = enabled) {
+                    Text("▼")
+                }
             }
         }
     }
