@@ -6,12 +6,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -23,11 +25,13 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,10 +46,13 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.agnov.ameli.data.ThemeMode
 import cl.agnov.ameli.sip.model.AudioCodec
+import cl.agnov.ameli.sip.model.NetworkProfile
 import cl.agnov.ameli.sip.model.SipTransport
 import cl.agnov.ameli.ui.viewmodel.SettingsUiState
 import cl.agnov.ameli.ui.viewmodel.SettingsViewModel
+import cl.agnov.ameli.ui.viewmodel.ThemeViewModel
 import cl.agnov.ameli.ui.viewmodel.ViewModelFactories
 
 @Composable
@@ -53,8 +60,11 @@ fun SettingsScreen(
     onSaved: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: SettingsViewModel = viewModel(factory = ViewModelFactories.settings),
+    themeViewModel: ThemeViewModel = viewModel(factory = ViewModelFactories.theme),
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val networkProfiles by viewModel.networkProfiles.collectAsState()
+    val themeMode by themeViewModel.themeMode.collectAsState()
 
     LaunchedEffect(uiState.saveSucceeded) {
         if (uiState.saveSucceeded) onSaved()
@@ -76,6 +86,12 @@ fun SettingsScreen(
 
         SettingsForm(
             uiState = uiState,
+            themeMode = themeMode,
+            onThemeModeChanged = themeViewModel::setThemeMode,
+            networkProfiles = networkProfiles,
+            onSaveNetworkProfile = viewModel::saveCurrentAsNetworkProfile,
+            onApplyNetworkProfile = viewModel::applyNetworkProfile,
+            onDeleteNetworkProfile = viewModel::deleteNetworkProfile,
             onUsernameChanged = viewModel::onUsernameChanged,
             onPasswordChanged = viewModel::onPasswordChanged,
             onDomainChanged = viewModel::onDomainChanged,
@@ -106,6 +122,12 @@ fun SettingsScreen(
 @Composable
 private fun SettingsForm(
     uiState: SettingsUiState,
+    themeMode: ThemeMode,
+    onThemeModeChanged: (ThemeMode) -> Unit,
+    networkProfiles: List<NetworkProfile>,
+    onSaveNetworkProfile: (String) -> Unit,
+    onApplyNetworkProfile: (NetworkProfile) -> Unit,
+    onDeleteNetworkProfile: (NetworkProfile) -> Unit,
     onUsernameChanged: (String) -> Unit,
     onPasswordChanged: (String) -> Unit,
     onDomainChanged: (String) -> Unit,
@@ -285,6 +307,13 @@ private fun SettingsForm(
             }
         }
 
+        NetworkProfilesSection(
+            profiles = networkProfiles,
+            onSaveCurrent = onSaveNetworkProfile,
+            onApply = onApplyNetworkProfile,
+            onDelete = onDeleteNetworkProfile,
+        )
+
         SettingsSection(title = "Prioridad de códecs de audio") {
             Text(
                 text = "Desmarca los que no quieras usar; el orden de la lista es la prioridad.",
@@ -342,6 +371,29 @@ private fun SettingsForm(
             )
         }
 
+        SettingsSection(title = "Apariencia") {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ThemeModeOption(
+                    label = "Sistema",
+                    selected = themeMode == ThemeMode.SYSTEM,
+                    onClick = { onThemeModeChanged(ThemeMode.SYSTEM) },
+                )
+                ThemeModeOption(
+                    label = "Claro",
+                    selected = themeMode == ThemeMode.LIGHT,
+                    onClick = { onThemeModeChanged(ThemeMode.LIGHT) },
+                )
+                ThemeModeOption(
+                    label = "Oscuro",
+                    selected = themeMode == ThemeMode.DARK,
+                    onClick = { onThemeModeChanged(ThemeMode.DARK) },
+                )
+            }
+        }
+
         uiState.saveError?.let { error ->
             Text(text = error, color = MaterialTheme.colorScheme.error)
         }
@@ -352,6 +404,126 @@ private fun SettingsForm(
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(if (uiState.isSaving) "Guardando..." else "Guardar y registrar")
+        }
+    }
+}
+
+@Composable
+private fun NetworkProfilesSection(
+    profiles: List<NetworkProfile>,
+    onSaveCurrent: (String) -> Unit,
+    onApply: (NetworkProfile) -> Unit,
+    onDelete: (NetworkProfile) -> Unit,
+) {
+    var showSaveDialog by remember { mutableStateOf(false) }
+
+    SettingsSection(title = "Perfiles de red") {
+        Text(
+            text = "Guarda la configuración de NAT/códec de arriba como un perfil " +
+                "(p.ej. \"Wi-Fi casa\", \"Datos móviles\", \"Oficina\") y aplícala con un toque " +
+                "al cambiar de red.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+
+        if (profiles.isEmpty()) {
+            Text(text = "Sin perfiles guardados", style = MaterialTheme.typography.bodySmall)
+        } else {
+            profiles.forEach { profile ->
+                NetworkProfileRow(
+                    profile = profile,
+                    onApply = { onApply(profile) },
+                    onDelete = { onDelete(profile) },
+                )
+            }
+        }
+
+        OutlinedButton(onClick = { showSaveDialog = true }, modifier = Modifier.fillMaxWidth()) {
+            Text("Guardar configuración actual como perfil")
+        }
+    }
+
+    if (showSaveDialog) {
+        SaveProfileDialog(
+            onDismiss = { showSaveDialog = false },
+            onConfirm = { name ->
+                onSaveCurrent(name)
+                showSaveDialog = false
+            },
+        )
+    }
+}
+
+@Composable
+private fun NetworkProfileRow(profile: NetworkProfile, onApply: () -> Unit, onDelete: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(text = profile.name, style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = profile.summary(),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            TextButton(onClick = onApply) {
+                Text("Aplicar")
+            }
+            IconButton(onClick = onDelete) {
+                Text("🗑")
+            }
+        }
+    }
+}
+
+private fun NetworkProfile.summary(): String = listOfNotNull(
+    if (stunEnabled) "STUN" else null,
+    if (iceEnabled) "ICE" else null,
+    if (turnEnabled) "TURN" else null,
+).ifEmpty { listOf("sin NAT") }.joinToString(" · ")
+
+@Composable
+private fun SaveProfileDialog(onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
+    var name by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Nuevo perfil de red") },
+        text = {
+            OutlinedTextField(
+                value = name,
+                onValueChange = { name = it },
+                label = { Text("Nombre (p.ej. Wi-Fi casa)") },
+                singleLine = true,
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = { onConfirm(name.trim()) }, enabled = name.isNotBlank()) {
+                Text("Guardar")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        },
+    )
+}
+
+@Composable
+private fun RowScope.ThemeModeOption(label: String, selected: Boolean, onClick: () -> Unit) {
+    if (selected) {
+        Button(onClick = onClick, modifier = Modifier.weight(1f)) {
+            Text(label)
+        }
+    } else {
+        OutlinedButton(onClick = onClick, modifier = Modifier.weight(1f)) {
+            Text(label)
         }
     }
 }

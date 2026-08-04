@@ -20,6 +20,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -48,6 +49,7 @@ fun HistoryScreen(
     viewModel: HistoryViewModel = viewModel(factory = ViewModelFactories.history),
 ) {
     val history by viewModel.history.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
     val requestRedial = rememberCallPermissionLauncher<CallHistoryRecord> { record ->
         viewModel.redial(record)
         onCallStarted()
@@ -66,27 +68,39 @@ fun HistoryScreen(
             )
         },
     ) { innerPadding ->
-        if (history.isEmpty()) {
-            Column(
-                modifier = Modifier.padding(innerPadding).fillMaxSize().padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Text("Sin llamadas registradas", style = MaterialTheme.typography.bodyLarge)
-            }
-            return@Scaffold
-        }
+        Column(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = viewModel::onSearchQueryChanged,
+                label = { Text("Buscar en el historial") },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+            )
 
-        LazyColumn(
-            modifier = Modifier.padding(innerPadding).fillMaxSize().padding(horizontal = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(vertical = 8.dp),
-        ) {
-            items(history, key = { it.id }) { record ->
-                CallHistoryRow(
-                    record = record,
-                    onRedial = { requestRedial(record) },
-                )
+            if (history.isEmpty()) {
+                Column(
+                    modifier = Modifier.fillMaxSize().padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    Text(
+                        text = if (searchQuery.isBlank()) "Sin llamadas registradas" else "Sin resultados para \"$searchQuery\"",
+                        style = MaterialTheme.typography.bodyLarge,
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    contentPadding = PaddingValues(vertical = 8.dp),
+                ) {
+                    items(history, key = { it.id }) { record ->
+                        CallHistoryRow(
+                            record = record,
+                            onRedial = { requestRedial(record) },
+                        )
+                    }
+                }
             }
         }
     }

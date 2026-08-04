@@ -3,6 +3,38 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
+## [0.3.0]
+
+### Añadido
+
+- Favoritos en la libreta de contactos: marcar/desmarcar con una estrella;
+  los favoritos aparecen primero en la lista.
+- Búsqueda por nombre o número/dirección tanto en Contactos como en el
+  Historial de llamadas.
+- Perfiles de red en Configuración: guardar la configuración de NAT/códec
+  actual (STUN/ICE/TURN/prioridad de códecs) con un nombre (p.ej. "Wi-Fi
+  casa", "Datos móviles", "Oficina") y aplicarla de nuevo con un toque al
+  cambiar de red, sin tener que reescribir los campos a mano.
+- Conferencia local de 3 o más participantes: además de la llamada en
+  espera existente, ahora se puede fusionar en una conferencia real
+  (mezcla de audio en el dispositivo), agregar más participantes en
+  caliente y colgarle a uno puntual sin cortar al resto.
+- Selector de tema en Configuración (Sistema / Claro / Oscuro),
+  independiente del color de marca navy/cian.
+
+## [0.2.4]
+
+### Añadido
+
+- Libreta de contactos local (Room): agregar, listar y eliminar contactos
+  (nombre + número/dirección SIP), con botón de llamada directa desde la
+  lista. Nueva pantalla "Contactos" accesible desde la pantalla principal.
+- Selector de ruta de audio de 3 vías en la llamada activa (auricular /
+  altavoz / Bluetooth), reemplazando el botón simple de altavoz. Se enrutan
+  tanto la entrada como la salida de audio hacia el dispositivo Bluetooth
+  conectado (audio SCO bidireccional). Requiere el permiso
+  `BLUETOOTH_CONNECT` en Android 12+, solicitado al abrir la app.
+
 ## [0.2.3]
 
 ### Añadido

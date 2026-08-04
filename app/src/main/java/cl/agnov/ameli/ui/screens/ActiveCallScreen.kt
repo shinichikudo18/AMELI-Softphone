@@ -33,6 +33,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import cl.agnov.ameli.sip.model.AudioRoute
 import cl.agnov.ameli.sip.model.CallConnectionState
 import cl.agnov.ameli.sip.model.CallQualityStats
 import cl.agnov.ameli.sip.model.CallUiState
@@ -57,10 +58,13 @@ fun ActiveCallScreen(
     val secondaryCallState by viewModel.secondaryCallState.collectAsState()
     val qualityStats by viewModel.qualityStats.collectAsState()
     val actionError by viewModel.actionError.collectAsState()
+    val isConferenceActive by viewModel.isConferenceActive.collectAsState()
+    val conferenceParticipants by viewModel.conferenceParticipants.collectAsState()
     var showDialpad by remember { mutableStateOf(false) }
     var showSecondCallInput by remember { mutableStateOf(false) }
     var showTransferInput by remember { mutableStateOf(false) }
     var showDetails by remember { mutableStateOf(false) }
+    var showAddParticipantInput by remember { mutableStateOf(false) }
 
     LaunchedEffect(callState?.connectionState) {
         if (callState == null || callState?.connectionState == CallConnectionState.ENDED) {
@@ -106,15 +110,30 @@ fun ActiveCallScreen(
                 CallDetailsCard(state = state, stats = qualityStats)
             }
 
-            secondaryCallState?.let { secondary ->
-                SecondaryCallCard(
-                    secondary = secondary,
-                    onAnswer = viewModel::answerSecondary,
-                    onDecline = viewModel::declineSecondary,
-                    onSwap = viewModel::swapCalls,
-                    onHangup = viewModel::hangupSecondary,
-                    onMerge = viewModel::completeConsultativeTransfer,
+            if (isConferenceActive) {
+                ConferenceCard(
+                    participants = conferenceParticipants,
+                    onHangupParticipant = viewModel::hangupParticipant,
+                    onEndConference = viewModel::endConference,
+                    showAddParticipantInput = showAddParticipantInput,
+                    onToggleAddParticipant = { showAddParticipantInput = !showAddParticipantInput },
+                    onAddParticipant = {
+                        viewModel.addConferenceParticipant(it)
+                        showAddParticipantInput = false
+                    },
                 )
+            } else {
+                secondaryCallState?.let { secondary ->
+                    SecondaryCallCard(
+                        secondary = secondary,
+                        onAnswer = viewModel::answerSecondary,
+                        onDecline = viewModel::declineSecondary,
+                        onSwap = viewModel::swapCalls,
+                        onHangup = viewModel::hangupSecondary,
+                        onMerge = viewModel::completeConsultativeTransfer,
+                        onStartConference = viewModel::startConference,
+                    )
+                }
             }
 
             Row(
@@ -124,10 +143,13 @@ fun ActiveCallScreen(
                 OutlinedButton(onClick = viewModel::toggleMute, modifier = Modifier.weight(1f)) {
                     Text(if (state.isMicMuted) "Reactivar mic" else "Silenciar")
                 }
-                OutlinedButton(onClick = viewModel::toggleSpeaker, modifier = Modifier.weight(1f)) {
-                    Text(if (state.isSpeakerOn) "Altavoz activado" else "Altavoz")
-                }
             }
+
+            AudioRoutePicker(
+                current = state.audioRoute,
+                available = state.availableAudioRoutes,
+                onSelect = viewModel::setAudioRoute,
+            )
 
             if (secondaryCallState == null) {
                 Row(
@@ -231,6 +253,37 @@ private fun CallerAvatar(label: String) {
 }
 
 @Composable
+private fun AudioRoutePicker(
+    current: AudioRoute,
+    available: List<AudioRoute>,
+    onSelect: (AudioRoute) -> Unit,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        available.forEach { route ->
+            val selected = route == current
+            if (selected) {
+                Button(onClick = { onSelect(route) }, modifier = Modifier.weight(1f)) {
+                    Text(route.toDisplayLabel())
+                }
+            } else {
+                OutlinedButton(onClick = { onSelect(route) }, modifier = Modifier.weight(1f)) {
+                    Text(route.toDisplayLabel())
+                }
+            }
+        }
+    }
+}
+
+private fun AudioRoute.toDisplayLabel(): String = when (this) {
+    AudioRoute.EARPIECE -> "Auricular"
+    AudioRoute.SPEAKER -> "Altavoz"
+    AudioRoute.BLUETOOTH -> "Bluetooth"
+}
+
+@Composable
 private fun AddressInputRow(label: String, confirmLabel: String, onConfirm: (String) -> Unit) {
     var value by remember { mutableStateOf("") }
     Row(
@@ -291,6 +344,7 @@ private fun SecondaryCallCard(
     onSwap: () -> Unit,
     onHangup: () -> Unit,
     onMerge: () -> Unit,
+    onStartConference: () -> Unit,
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -338,6 +392,71 @@ private fun SecondaryCallCard(
                 OutlinedButton(onClick = onMerge, modifier = Modifier.fillMaxWidth()) {
                     Text("Unir llamadas")
                 }
+                OutlinedButton(onClick = onStartConference, modifier = Modifier.fillMaxWidth()) {
+                    Text("Iniciar conferencia")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ConferenceCard(
+    participants: List<CallUiState>,
+    onHangupParticipant: (String) -> Unit,
+    onEndConference: () -> Unit,
+    showAddParticipantInput: Boolean,
+    onToggleAddParticipant: () -> Unit,
+    onAddParticipant: (String) -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = "Conferencia · ${participants.size} participante(s)",
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            HorizontalDivider()
+
+            participants.forEach { participant ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column {
+                        Text(text = friendlyCallerLabel(participant), style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            text = participant.connectionState.toDisplayMessage(),
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                    TextButton(onClick = { onHangupParticipant(participant.callId) }) {
+                        Text("Colgar")
+                    }
+                }
+            }
+
+            OutlinedButton(onClick = onToggleAddParticipant, modifier = Modifier.fillMaxWidth()) {
+                Text(if (showAddParticipantInput) "Cancelar" else "Agregar participante")
+            }
+
+            if (showAddParticipantInput) {
+                AddressInputRow(
+                    label = "Llamar a",
+                    confirmLabel = "Llamar",
+                    onConfirm = onAddParticipant,
+                )
+            }
+
+            Button(onClick = onEndConference, modifier = Modifier.fillMaxWidth()) {
+                Text("Finalizar conferencia")
             }
         }
     }

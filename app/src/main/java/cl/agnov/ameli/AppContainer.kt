@@ -2,11 +2,16 @@ package cl.agnov.ameli
 
 import android.content.Context
 import cl.agnov.ameli.data.CallHistoryRepository
+import cl.agnov.ameli.data.ContactsRepository
 import cl.agnov.ameli.data.DoNotDisturbRepository
 import cl.agnov.ameli.data.DoNotDisturbState
+import cl.agnov.ameli.data.NetworkProfilesRepository
 import cl.agnov.ameli.data.PreferencesRepository
 import cl.agnov.ameli.data.RoomCallHistoryRepository
+import cl.agnov.ameli.data.RoomContactsRepository
+import cl.agnov.ameli.data.RoomNetworkProfilesRepository
 import cl.agnov.ameli.data.SecureCredentialStore
+import cl.agnov.ameli.data.ThemePreferenceRepository
 import cl.agnov.ameli.data.db.AmeliDatabase
 import cl.agnov.ameli.sip.AudioRouteManager
 import cl.agnov.ameli.sip.CallManager
@@ -26,8 +31,13 @@ class AppContainer(context: Context) {
     val sipAccountManager = SipAccountManager()
     val callHistoryRepository: CallHistoryRepository =
         RoomCallHistoryRepository(AmeliDatabase.getInstance(context.applicationContext).callHistoryDao())
+    val contactsRepository: ContactsRepository =
+        RoomContactsRepository(AmeliDatabase.getInstance(context.applicationContext).contactDao())
+    val networkProfilesRepository: NetworkProfilesRepository =
+        RoomNetworkProfilesRepository(AmeliDatabase.getInstance(context.applicationContext).networkProfileDao())
     val doNotDisturbRepository: DoNotDisturbState = DoNotDisturbRepository(context.applicationContext)
-    val callManager = CallManager(AudioRouteManager(), callHistoryRepository, doNotDisturbRepository)
+    val callManager = CallManager(AudioRouteManager(context.applicationContext), callHistoryRepository, doNotDisturbRepository)
     val updateChecker = UpdateChecker(BuildConfig.VERSION_NAME)
     val updateDismissalStore = UpdateDismissalStore(context.applicationContext)
+    val themePreferenceRepository = ThemePreferenceRepository(context.applicationContext)
 }

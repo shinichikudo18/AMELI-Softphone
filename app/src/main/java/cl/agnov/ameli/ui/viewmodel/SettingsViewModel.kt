@@ -4,15 +4,19 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.agnov.ameli.data.AccountPreferencesStore
 import cl.agnov.ameli.data.CredentialStore
+import cl.agnov.ameli.data.NetworkProfilesRepository
 import cl.agnov.ameli.sip.AccountConfigurator
 import cl.agnov.ameli.sip.model.AudioCodec
+import cl.agnov.ameli.sip.model.NetworkProfile
 import cl.agnov.ameli.sip.model.SipAccountConfig
 import cl.agnov.ameli.sip.model.SipRegistrationState
 import cl.agnov.ameli.sip.model.SipTransport
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 data class SettingsUiState(
@@ -60,6 +64,7 @@ class SettingsViewModel(
     private val preferencesRepository: AccountPreferencesStore,
     private val secureCredentialStore: CredentialStore,
     private val sipAccountManager: AccountConfigurator,
+    private val networkProfilesRepository: NetworkProfilesRepository,
     registrationState: StateFlow<SipRegistrationState>,
 ) : ViewModel() {
 
@@ -67,6 +72,9 @@ class SettingsViewModel(
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
 
     val registrationState: StateFlow<SipRegistrationState> = registrationState
+
+    val networkProfiles: StateFlow<List<NetworkProfile>> = networkProfilesRepository.profiles
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     init {
         viewModelScope.launch {
@@ -243,5 +251,39 @@ class SettingsViewModel(
                 saveError = result.exceptionOrNull()?.message,
             )
         }
+    }
+
+    /** Guarda la configuración actual de NAT/códec (sin credenciales) como un perfil de red reutilizable. */
+    fun saveCurrentAsNetworkProfile(name: String) {
+        val state = _uiState.value
+        val profile = NetworkProfile(
+            name = name,
+            stunEnabled = state.stunEnabled,
+            stunServer = state.stunServer.trim(),
+            iceEnabled = state.iceEnabled,
+            turnEnabled = state.turnEnabled,
+            turnServer = state.turnServer.trim(),
+            codecPriority = state.codecPriority,
+        )
+        viewModelScope.launch { networkProfilesRepository.save(profile) }
+    }
+
+    /** Aplica un perfil de red guardado (NAT/códec) y lo persiste/activa de inmediato contra la cuenta SIP. */
+    fun applyNetworkProfile(profile: NetworkProfile) {
+        _uiState.value = _uiState.value.copy(
+            stunEnabled = profile.stunEnabled,
+            stunServer = profile.stunServer,
+            iceEnabled = profile.iceEnabled,
+            turnEnabled = profile.turnEnabled,
+            turnServer = profile.turnServer,
+            codecPriority = profile.codecPriority,
+            saveError = null,
+            saveSucceeded = false,
+        )
+        save()
+    }
+
+    fun deleteNetworkProfile(profile: NetworkProfile) {
+        viewModelScope.launch { networkProfilesRepository.remove(profile) }
     }
 }

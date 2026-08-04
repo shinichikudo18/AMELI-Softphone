@@ -2,7 +2,9 @@ package cl.agnov.ameli.ui.viewmodel
 
 import cl.agnov.ameli.data.AccountPreferencesStore
 import cl.agnov.ameli.data.CredentialStore
+import cl.agnov.ameli.data.NetworkProfilesRepository
 import cl.agnov.ameli.sip.AccountConfigurator
+import cl.agnov.ameli.sip.model.NetworkProfile
 import cl.agnov.ameli.sip.model.SipAccountConfig
 import cl.agnov.ameli.sip.model.SipAccountPreferences
 import cl.agnov.ameli.sip.model.SipRegistrationState
@@ -61,6 +63,19 @@ private class FakeCredentialStore(initialPassword: String? = null) : CredentialS
     }
 }
 
+private class FakeNetworkProfilesRepository : NetworkProfilesRepository {
+    private val state = MutableStateFlow<List<NetworkProfile>>(emptyList())
+    override val profiles = state
+
+    override suspend fun save(profile: NetworkProfile) {
+        state.value = state.value + profile
+    }
+
+    override suspend fun remove(profile: NetworkProfile) {
+        state.value = state.value.filterNot { it.id == profile.id }
+    }
+}
+
 private class FakeAccountConfigurator(
     private val result: Result<Unit> = Result.success(Unit),
 ) : AccountConfigurator {
@@ -98,6 +113,7 @@ class SettingsViewModelTest {
             preferencesRepository = preferencesStore,
             secureCredentialStore = credentialStore,
             sipAccountManager = FakeAccountConfigurator(),
+            networkProfilesRepository = FakeNetworkProfilesRepository(),
             registrationState = MutableStateFlow(SipRegistrationState.NOT_REGISTERED),
         )
         dispatcher.scheduler.advanceUntilIdle()
@@ -116,6 +132,7 @@ class SettingsViewModelTest {
             preferencesRepository = FakeAccountPreferencesStore(),
             secureCredentialStore = FakeCredentialStore(),
             sipAccountManager = FakeAccountConfigurator(),
+            networkProfilesRepository = FakeNetworkProfilesRepository(),
             registrationState = MutableStateFlow(SipRegistrationState.NOT_REGISTERED),
         )
         dispatcher.scheduler.advanceUntilIdle()
@@ -137,6 +154,7 @@ class SettingsViewModelTest {
             preferencesRepository = preferencesStore,
             secureCredentialStore = credentialStore,
             sipAccountManager = accountConfigurator,
+            networkProfilesRepository = FakeNetworkProfilesRepository(),
             registrationState = MutableStateFlow(SipRegistrationState.NOT_REGISTERED),
         )
         dispatcher.scheduler.advanceUntilIdle()

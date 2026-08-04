@@ -15,6 +15,7 @@ object ViewModelFactories {
                 preferencesRepository = app.container.preferencesRepository,
                 secureCredentialStore = app.container.secureCredentialStore,
                 sipAccountManager = app.container.sipAccountManager,
+                networkProfilesRepository = app.container.networkProfilesRepository,
                 registrationState = LinphoneManager.registrationState,
             )
         }
@@ -54,10 +55,27 @@ object ViewModelFactories {
         }
     }
 
+    val contacts = viewModelFactory {
+        initializer {
+            val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as AmeliApplication
+            ContactsViewModel(
+                repository = app.container.contactsRepository,
+                callController = app.container.callManager,
+            )
+        }
+    }
+
     val doNotDisturb = viewModelFactory {
         initializer {
             val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as AmeliApplication
             DoNotDisturbViewModel(doNotDisturbState = app.container.doNotDisturbRepository)
+        }
+    }
+
+    val theme = viewModelFactory {
+        initializer {
+            val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as AmeliApplication
+            ThemeViewModel(themePreferenceStore = app.container.themePreferenceRepository)
         }
     }
 

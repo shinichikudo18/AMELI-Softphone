@@ -39,6 +39,9 @@ enum class CallConnectionState {
     }
 }
 
+/** Ruta de salida/entrada de audio disponible durante una llamada. */
+enum class AudioRoute { EARPIECE, SPEAKER, BLUETOOTH }
+
 data class CallUiState(
     val callId: String,
     val direction: CallDirection,
@@ -47,5 +50,6 @@ data class CallUiState(
     val connectionState: CallConnectionState,
     val durationSeconds: Int = 0,
     val isMicMuted: Boolean = false,
-    val isSpeakerOn: Boolean = false,
+    val audioRoute: AudioRoute = AudioRoute.EARPIECE,
+    val availableAudioRoutes: List<AudioRoute> = listOf(AudioRoute.EARPIECE),
 )

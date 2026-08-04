@@ -2,6 +2,7 @@ package cl.agnov.ameli.sip
 
 import cl.agnov.ameli.data.CallHistoryRepository
 import cl.agnov.ameli.data.DoNotDisturbState
+import cl.agnov.ameli.sip.model.AudioRoute
 import cl.agnov.ameli.sip.model.CallConnectionState
 import cl.agnov.ameli.sip.model.CallDirection
 import cl.agnov.ameli.sip.model.CallHistoryRecord
@@ -18,6 +19,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.linphone.core.Call
 import org.linphone.core.CallStats
+import org.linphone.core.Conference
 import org.linphone.core.Reason
 import org.linphone.core.StreamType
 
@@ -36,7 +38,7 @@ interface CallController {
     fun hangup()
     fun silenceRinger()
     fun toggleMute()
-    fun toggleSpeaker()
+    fun setAudioRoute(route: AudioRoute)
     fun sendDtmf(digit: Char): Result<Unit>
     fun currentDurationSeconds(): Int
 
@@ -56,6 +58,24 @@ interface CallController {
 
     /** Transferencia consultiva: une la llamada en espera con la de primer plano. */
     fun completeConsultativeTransfer(): Result<Unit>
+
+    /** Indica si las llamadas activas están fusionadas en una conferencia local. */
+    val isConferenceActive: StateFlow<Boolean>
+
+    /** Participantes de la conferencia activa (vacío si no hay conferencia). */
+    val conferenceParticipants: StateFlow<List<CallUiState>>
+
+    /** Fusiona la llamada en primer plano y la(s) que estén en espera en una conferencia local. */
+    fun startConference(): Result<Unit>
+
+    /** Inicia una llamada hacia [addressOrNumber] y la añade a la conferencia activa una vez conectada. */
+    fun addConferenceParticipant(addressOrNumber: String): Result<Unit>
+
+    /** Cuelga a un participante puntual de la conferencia. */
+    fun hangupParticipant(callId: String)
+
+    /** Termina la conferencia completa (cuelga a todos los participantes). */
+    fun endConference(): Result<Unit>
 }
 
 /**
@@ -81,6 +101,18 @@ class CallManager(
     override val callQualityStats: StateFlow<CallQualityStats?> = _callQualityStats.asStateFlow()
 
     private val _doNotDisturbEnabled = MutableStateFlow(false)
+
+    private val _isConferenceActive = MutableStateFlow(false)
+    override val isConferenceActive: StateFlow<Boolean> = _isConferenceActive.asStateFlow()
+
+    private val _conferenceParticipants = MutableStateFlow<List<CallUiState>>(emptyList())
+    override val conferenceParticipants: StateFlow<List<CallUiState>> = _conferenceParticipants.asStateFlow()
+
+    /** Si hay una llamada en curso hacia un nuevo participante que debe unirse a la conferencia al conectar. */
+    private var pendingConferenceMergeCallId: String? = null
+
+    /** Conferencia local activa (mezcla de audio en el propio dispositivo), si existe. */
+    private var localConference: Conference? = null
 
     /** Todas las llamadas activas conocidas, por Call-ID SIP (estable a través de la vida del Call). */
     private val calls = LinkedHashMap<String, Call>()
@@ -130,8 +162,8 @@ class CallManager(
         refreshStates()
     }
 
-    override fun toggleSpeaker() {
-        audioRouteController.setSpeakerEnabled(!audioRouteController.isSpeakerOn())
+    override fun setAudioRoute(route: AudioRoute) {
+        audioRouteController.setRoute(route)
         refreshStates()
     }
 
@@ -198,6 +230,54 @@ class CallManager(
         return Result.success(Unit)
     }
 
+    override fun startConference(): Result<Unit> {
+        if (calls.size < 2) {
+            return Result.failure(IllegalStateException("Se necesitan al menos dos llamadas para iniciar una conferencia"))
+        }
+        val core = LinphoneManager.core
+        val params = core.createConferenceParams(null)
+        params.isLocalParticipantEnabled = true
+        val conference = core.createConferenceWithParams(params)
+            ?: return Result.failure(IllegalStateException("No se pudo crear la conferencia"))
+        conference.addParticipants(calls.values.toTypedArray())
+        localConference = conference
+        _isConferenceActive.value = true
+        refreshStates()
+        return Result.success(Unit)
+    }
+
+    override fun addConferenceParticipant(addressOrNumber: String): Result<Unit> {
+        if (!_isConferenceActive.value) {
+            return Result.failure(IllegalStateException("No hay una conferencia activa"))
+        }
+        if (calls.size >= MAX_SIMULTANEOUS_CALLS) {
+            return Result.failure(IllegalStateException("Se alcanzó el máximo de participantes"))
+        }
+        val core = LinphoneManager.core
+        val account = core.defaultAccount
+            ?: return Result.failure(IllegalStateException("No hay una cuenta SIP configurada"))
+        val address = account.normalizeSipUri(addressOrNumber)
+            ?: return Result.failure(IllegalArgumentException("Número o dirección SIP inválida"))
+
+        val call = core.inviteAddress(address)
+            ?: return Result.failure(IllegalStateException("No se pudo iniciar la llamada"))
+        pendingConferenceMergeCallId = call.stableId()
+        trackCall(call, asForeground = false)
+        return Result.success(Unit)
+    }
+
+    override fun hangupParticipant(callId: String) {
+        calls[callId]?.terminate()
+    }
+
+    override fun endConference(): Result<Unit> {
+        if (!_isConferenceActive.value) {
+            return Result.failure(IllegalStateException("No hay una conferencia activa"))
+        }
+        localConference?.terminate()
+        return Result.success(Unit)
+    }
+
     /** El SIP Call-ID es estable durante toda la vida del Call; si el SDK no lo expone, se usa un id de respaldo. */
     private fun Call.stableId(): String = callLog.callId ?: System.identityHashCode(this).toString()
 
@@ -230,6 +310,9 @@ class CallManager(
                 recordHistory(call)
             }
             calls.remove(callId)
+            if (pendingConferenceMergeCallId == callId) {
+                pendingConferenceMergeCallId = null
+            }
             if (foregroundCallId == callId) {
                 foregroundCallId = calls.keys.firstOrNull()
                 // Si queda una sola llamada y estaba en espera, se reanuda
@@ -242,6 +325,10 @@ class CallManager(
             if (callId == foregroundCallId || calls.isEmpty()) {
                 _callQualityStats.value = null
             }
+            if (calls.size < 2) {
+                _isConferenceActive.value = false
+                localConference = null
+            }
             refreshStates()
             return
         }
@@ -249,6 +336,10 @@ class CallManager(
         calls[callId] = call
         if (foregroundCallId == null) {
             foregroundCallId = callId
+        }
+        if (pendingConferenceMergeCallId == callId && state == Call.State.StreamsRunning) {
+            pendingConferenceMergeCallId = null
+            localConference?.addParticipant(call)
         }
         refreshStates()
     }
@@ -282,6 +373,11 @@ class CallManager(
     private fun refreshStates() {
         _callState.value = foregroundCall()?.let { toUiState(it) }
         _secondaryCallState.value = otherCallId()?.let { calls[it] }?.let { toUiState(it) }
+        _conferenceParticipants.value = if (_isConferenceActive.value) {
+            calls.values.map { toUiState(it) }
+        } else {
+            emptyList()
+        }
     }
 
     private fun toUiState(call: Call): CallUiState {
@@ -294,11 +390,13 @@ class CallManager(
             connectionState = CallConnectionState.from(call.state),
             durationSeconds = call.duration,
             isMicMuted = audioRouteController.isMicMuted(),
-            isSpeakerOn = audioRouteController.isSpeakerOn(),
+            audioRoute = audioRouteController.currentRoute(),
+            availableAudioRoutes = audioRouteController.availableRoutes(),
         )
     }
 
     private companion object {
-        const val MAX_SIMULTANEOUS_CALLS = 2
+        /** Hasta 4 llamadas simultáneas: primer plano + en espera, o hasta 4 participantes en conferencia. */
+        const val MAX_SIMULTANEOUS_CALLS = 4
     }
 }

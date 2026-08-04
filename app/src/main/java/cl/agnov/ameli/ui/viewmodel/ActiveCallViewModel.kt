@@ -3,6 +3,7 @@ package cl.agnov.ameli.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cl.agnov.ameli.sip.CallController
+import cl.agnov.ameli.sip.model.AudioRoute
 import cl.agnov.ameli.sip.model.CallQualityStats
 import cl.agnov.ameli.sip.model.CallUiState
 import kotlinx.coroutines.delay
@@ -40,6 +41,10 @@ class ActiveCallViewModel(
 
     val qualityStats: StateFlow<CallQualityStats?> = callController.callQualityStats
 
+    val isConferenceActive: StateFlow<Boolean> = callController.isConferenceActive
+
+    val conferenceParticipants: StateFlow<List<CallUiState>> = callController.conferenceParticipants
+
     private val _actionError = MutableStateFlow<String?>(null)
     val actionError: StateFlow<String?> = _actionError.asStateFlow()
 
@@ -51,8 +56,8 @@ class ActiveCallViewModel(
         callController.toggleMute()
     }
 
-    fun toggleSpeaker() {
-        callController.toggleSpeaker()
+    fun setAudioRoute(route: AudioRoute) {
+        callController.setAudioRoute(route)
     }
 
     fun sendDtmf(digit: Char) {
@@ -85,6 +90,22 @@ class ActiveCallViewModel(
 
     fun completeConsultativeTransfer() {
         reportIfFailed(callController.completeConsultativeTransfer())
+    }
+
+    fun startConference() {
+        reportIfFailed(callController.startConference())
+    }
+
+    fun addConferenceParticipant(addressOrNumber: String) {
+        reportIfFailed(callController.addConferenceParticipant(addressOrNumber))
+    }
+
+    fun hangupParticipant(callId: String) {
+        callController.hangupParticipant(callId)
+    }
+
+    fun endConference() {
+        reportIfFailed(callController.endConference())
     }
 
     private fun reportIfFailed(result: Result<Unit>) {

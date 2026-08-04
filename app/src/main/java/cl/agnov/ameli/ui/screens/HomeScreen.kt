@@ -52,6 +52,7 @@ fun HomeScreen(
     onOpenSettings: () -> Unit,
     onOpenDialer: () -> Unit,
     onOpenHistory: () -> Unit,
+    onOpenContacts: () -> Unit,
     modifier: Modifier = Modifier,
     updateViewModel: UpdateViewModel = viewModel(factory = ViewModelFactories.update),
     doNotDisturbViewModel: DoNotDisturbViewModel = viewModel(factory = ViewModelFactories.doNotDisturb),
@@ -137,6 +138,10 @@ fun HomeScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Marcar")
+            }
+
+            OutlinedButton(onClick = onOpenContacts, modifier = Modifier.fillMaxWidth()) {
+                Text("Contactos")
             }
 
             OutlinedButton(onClick = onOpenHistory, modifier = Modifier.fillMaxWidth()) {
