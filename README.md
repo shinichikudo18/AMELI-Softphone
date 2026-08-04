@@ -6,6 +6,8 @@ mediante su repositorio Maven oficial. Este proyecto **no** es una copia ni una
 modificación de la aplicación Linphone Android: es una aplicación nueva e
 independiente que consume el SDK de Liblinphone como dependencia.
 
+AMELI Softphone es una plataforma de [Agnov Solutions](https://www.agnov.cl).
+
 > **Estado**: en desarrollo activo, por fases. Ver [CHANGELOG.md](CHANGELOG.md)
 > para el detalle de lo implementado en cada versión.
 

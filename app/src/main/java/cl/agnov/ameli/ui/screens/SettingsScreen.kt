@@ -25,6 +25,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -91,6 +92,11 @@ fun SettingsScreen(
             onTurnPasswordChanged = viewModel::onTurnPasswordChanged,
             onCodecToggled = viewModel::onCodecToggled,
             onCodecMoved = viewModel::onCodecMoved,
+            onAgcEnabledChanged = viewModel::onAgcEnabledChanged,
+            onNoiseSuppressionEnabledChanged = viewModel::onNoiseSuppressionEnabledChanged,
+            onEchoCancellationEnabledChanged = viewModel::onEchoCancellationEnabledChanged,
+            onMicGainDbChanged = viewModel::onMicGainDbChanged,
+            onPlaybackGainDbChanged = viewModel::onPlaybackGainDbChanged,
             onSave = viewModel::save,
             modifier = Modifier.padding(innerPadding),
         )
@@ -116,6 +122,11 @@ private fun SettingsForm(
     onTurnPasswordChanged: (String) -> Unit,
     onCodecToggled: (AudioCodec, Boolean) -> Unit,
     onCodecMoved: (AudioCodec, Int) -> Unit,
+    onAgcEnabledChanged: (Boolean) -> Unit,
+    onNoiseSuppressionEnabledChanged: (Boolean) -> Unit,
+    onEchoCancellationEnabledChanged: (Boolean) -> Unit,
+    onMicGainDbChanged: (Float) -> Unit,
+    onPlaybackGainDbChanged: (Float) -> Unit,
     onSave: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -295,6 +306,42 @@ private fun SettingsForm(
             }
         }
 
+        SettingsSection(title = "Avanzado: audio") {
+            Text(
+                text = "Si el micrófono se escucha bajo, activa el control automático de " +
+                    "ganancia o sube la ganancia manual. La mayoría de los usuarios no " +
+                    "necesita tocar esto.",
+                style = MaterialTheme.typography.bodySmall,
+            )
+
+            SwitchRow(
+                label = "Control automático de ganancia (AGC)",
+                checked = uiState.agcEnabled,
+                onCheckedChange = onAgcEnabledChanged,
+            )
+            SwitchRow(
+                label = "Supresión de ruido",
+                checked = uiState.noiseSuppressionEnabled,
+                onCheckedChange = onNoiseSuppressionEnabledChanged,
+            )
+            SwitchRow(
+                label = "Cancelación de eco",
+                checked = uiState.echoCancellationEnabled,
+                onCheckedChange = onEchoCancellationEnabledChanged,
+            )
+
+            GainSliderRow(
+                label = "Ganancia del micrófono",
+                valueDb = uiState.micGainDb,
+                onValueChange = onMicGainDbChanged,
+            )
+            GainSliderRow(
+                label = "Ganancia de reproducción (altavoz/auricular)",
+                valueDb = uiState.playbackGainDb,
+                onValueChange = onPlaybackGainDbChanged,
+            )
+        }
+
         uiState.saveError?.let { error ->
             Text(text = error, color = MaterialTheme.colorScheme.error)
         }
@@ -335,6 +382,22 @@ private fun SwitchRow(label: String, checked: Boolean, onCheckedChange: (Boolean
     ) {
         Text(text = label, style = MaterialTheme.typography.bodyLarge)
         Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+@Composable
+private fun GainSliderRow(label: String, valueDb: Float, onValueChange: (Float) -> Unit) {
+    Column {
+        Text(
+            text = "$label: %.0f dB".format(valueDb),
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Slider(
+            value = valueDb,
+            onValueChange = onValueChange,
+            valueRange = -24f..24f,
+            steps = 47,
+        )
     }
 }
 

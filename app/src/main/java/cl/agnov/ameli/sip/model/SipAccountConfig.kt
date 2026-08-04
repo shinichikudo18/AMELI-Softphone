@@ -32,6 +32,11 @@ data class SipAccountConfig(
     val turnUsername: String = "",
     val turnPassword: String = "",
     val codecPriority: List<AudioCodec> = AudioCodec.DEFAULT_PRIORITY,
+    val agcEnabled: Boolean = true,
+    val noiseSuppressionEnabled: Boolean = true,
+    val echoCancellationEnabled: Boolean = true,
+    val micGainDb: Float = 0f,
+    val playbackGainDb: Float = 0f,
 ) {
     val isValid: Boolean
         get() = username.isNotBlank() && domain.isNotBlank() && port in 1..65535
@@ -50,6 +55,11 @@ data class SipAccountConfig(
         turnServer = turnServer,
         turnUsername = turnUsername,
         codecPriority = codecPriority,
+        agcEnabled = agcEnabled,
+        noiseSuppressionEnabled = noiseSuppressionEnabled,
+        echoCancellationEnabled = echoCancellationEnabled,
+        micGainDb = micGainDb,
+        playbackGainDb = playbackGainDb,
     )
 }
 
@@ -72,6 +82,11 @@ data class SipAccountPreferences(
     val turnServer: String = "",
     val turnUsername: String = "",
     val codecPriority: List<AudioCodec> = AudioCodec.DEFAULT_PRIORITY,
+    val agcEnabled: Boolean = true,
+    val noiseSuppressionEnabled: Boolean = true,
+    val echoCancellationEnabled: Boolean = true,
+    val micGainDb: Float = 0f,
+    val playbackGainDb: Float = 0f,
 ) {
     fun toAccountConfig(password: String, turnPassword: String): SipAccountConfig = SipAccountConfig(
         username = username,
@@ -89,5 +104,10 @@ data class SipAccountPreferences(
         turnUsername = turnUsername,
         turnPassword = turnPassword,
         codecPriority = codecPriority,
+        agcEnabled = agcEnabled,
+        noiseSuppressionEnabled = noiseSuppressionEnabled,
+        echoCancellationEnabled = echoCancellationEnabled,
+        micGainDb = micGainDb,
+        playbackGainDb = playbackGainDb,
     )
 }

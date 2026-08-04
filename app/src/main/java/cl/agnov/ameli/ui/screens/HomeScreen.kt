@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -145,7 +146,25 @@ fun HomeScreen(
             OutlinedButton(onClick = onOpenSettings, modifier = Modifier.fillMaxWidth()) {
                 Text("Configurar cuenta SIP")
             }
+
+            Spacer(modifier = Modifier.weight(1f))
+
+            AgnovFooter()
         }
+    }
+}
+
+@Composable
+private fun AgnovFooter() {
+    val context = LocalContext.current
+    TextButton(onClick = {
+        context.startActivity(Intent(Intent.ACTION_VIEW, "https://www.agnov.cl".toUri()))
+    }) {
+        Text(
+            text = "Una plataforma de Agnov Solutions · agnov.cl",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

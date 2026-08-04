@@ -55,6 +55,7 @@ class SipAccountManager : AccountConfigurator {
             )
 
             applyCodecPriority(core, config.codecPriority)
+            applyAudioSettings(core, config)
 
             // realm = null acepta el realm que reporte el servidor en el desafío de autenticación.
             val authInfo = factory.createAuthInfo(
@@ -145,6 +146,19 @@ class SipAccountManager : AccountConfigurator {
         ordered.addAll(available)
 
         core.setAudioPayloadTypes(ordered.toTypedArray())
+    }
+
+    /**
+     * Ajustes avanzados de audio (Core-level, no por cuenta): control
+     * automático de ganancia, supresión de ruido, cancelación de eco y
+     * ganancia manual de micrófono/reproducción en dB.
+     */
+    private fun applyAudioSettings(core: Core, config: SipAccountConfig) {
+        core.isAgcEnabled = config.agcEnabled
+        core.isNoiseSuppressionEnabled = config.noiseSuppressionEnabled
+        core.isEchoCancellationEnabled = config.echoCancellationEnabled
+        core.setMicGainDb(config.micGainDb)
+        core.setPlaybackGainDb(config.playbackGainDb)
     }
 
     private fun SipTransport.toLinphoneTransportType(): TransportType = when (this) {

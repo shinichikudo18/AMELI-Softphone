@@ -19,6 +19,7 @@ inmediatamente contra Liblinphone e intenta registrarse.
 | ICE | Negociación de mejor ruta de medios (directa/STUN/TURN); recomendado si hay NAT de por medio. |
 | TURN | Servidor/usuario/contraseña TURN, para redes con NAT simétrico donde ICE por sí solo no basta. La contraseña se guarda cifrada igual que la SIP. |
 | Prioridad de códecs | Qué códecs de audio usar y en qué orden (Opus, PCMA, PCMU, G722). Los desmarcados quedan deshabilitados. |
+| Avanzado: audio | Control automático de ganancia (AGC), supresión de ruido, cancelación de eco, y ganancia manual de micrófono/reproducción en dB (-24 a +24). Si el micrófono se escucha bajo, activa AGC o sube la ganancia manual. |
 
 ## Recomendaciones de seguridad
 

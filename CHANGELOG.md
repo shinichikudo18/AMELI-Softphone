@@ -3,6 +3,19 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
+## [0.2.3]
+
+### Añadido
+
+- Sección "Avanzado: audio" en Configuración: control automático de
+  ganancia (AGC, activado por defecto), supresión de ruido, cancelación de
+  eco, y sliders de ganancia manual de micrófono/reproducción en dB (-24 a
+  +24), aplicados vía `Core.setAgcEnabled`/`setMicGainDb`/`setPlaybackGainDb`
+  (verificados con javap antes de usarlos). Pensado para el caso de un
+  micrófono que se escucha bajo en comparación con otras apps del teléfono.
+- Atribución a Agnov Solutions en la pantalla principal (enlace a
+  agnov.cl), ya que AMELI Softphone es una plataforma de Agnov Solutions.
+
 ## [0.2.2]
 
 ### Cambiado

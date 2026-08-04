@@ -3,6 +3,7 @@ package cl.agnov.ameli.data
 import android.content.Context
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -41,6 +42,11 @@ class PreferencesRepository(private val context: Context) : AccountPreferencesSt
         val TURN_SERVER = stringPreferencesKey("sip_turn_server")
         val TURN_USERNAME = stringPreferencesKey("sip_turn_username")
         val CODEC_PRIORITY = stringPreferencesKey("sip_codec_priority")
+        val AGC_ENABLED = booleanPreferencesKey("audio_agc_enabled")
+        val NOISE_SUPPRESSION_ENABLED = booleanPreferencesKey("audio_noise_suppression_enabled")
+        val ECHO_CANCELLATION_ENABLED = booleanPreferencesKey("audio_echo_cancellation_enabled")
+        val MIC_GAIN_DB = floatPreferencesKey("audio_mic_gain_db")
+        val PLAYBACK_GAIN_DB = floatPreferencesKey("audio_playback_gain_db")
     }
 
     override val accountPreferences: Flow<SipAccountPreferences?> = context.dataStore.data.map { prefs ->
@@ -64,6 +70,11 @@ class PreferencesRepository(private val context: Context) : AccountPreferencesSt
             turnUsername = prefs[Keys.TURN_USERNAME] ?: "",
             codecPriority = prefs[Keys.CODEC_PRIORITY]?.let(::decodeCodecPriority)
                 ?: AudioCodec.DEFAULT_PRIORITY,
+            agcEnabled = prefs[Keys.AGC_ENABLED] ?: true,
+            noiseSuppressionEnabled = prefs[Keys.NOISE_SUPPRESSION_ENABLED] ?: true,
+            echoCancellationEnabled = prefs[Keys.ECHO_CANCELLATION_ENABLED] ?: true,
+            micGainDb = prefs[Keys.MIC_GAIN_DB] ?: 0f,
+            playbackGainDb = prefs[Keys.PLAYBACK_GAIN_DB] ?: 0f,
         )
     }
 
@@ -82,6 +93,11 @@ class PreferencesRepository(private val context: Context) : AccountPreferencesSt
             prefs[Keys.TURN_SERVER] = preferences.turnServer
             prefs[Keys.TURN_USERNAME] = preferences.turnUsername
             prefs[Keys.CODEC_PRIORITY] = encodeCodecPriority(preferences.codecPriority)
+            prefs[Keys.AGC_ENABLED] = preferences.agcEnabled
+            prefs[Keys.NOISE_SUPPRESSION_ENABLED] = preferences.noiseSuppressionEnabled
+            prefs[Keys.ECHO_CANCELLATION_ENABLED] = preferences.echoCancellationEnabled
+            prefs[Keys.MIC_GAIN_DB] = preferences.micGainDb
+            prefs[Keys.PLAYBACK_GAIN_DB] = preferences.playbackGainDb
         }
     }
 

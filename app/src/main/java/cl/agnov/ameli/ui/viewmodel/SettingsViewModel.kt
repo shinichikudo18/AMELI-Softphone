@@ -31,6 +31,11 @@ data class SettingsUiState(
     val turnUsername: String = "",
     val turnPassword: String = "",
     val codecPriority: List<AudioCodec> = AudioCodec.DEFAULT_PRIORITY,
+    val agcEnabled: Boolean = true,
+    val noiseSuppressionEnabled: Boolean = true,
+    val echoCancellationEnabled: Boolean = true,
+    val micGainDb: Float = 0f,
+    val playbackGainDb: Float = 0f,
     val isLoading: Boolean = true,
     val isSaving: Boolean = false,
     val saveError: String? = null,
@@ -85,6 +90,11 @@ class SettingsViewModel(
                     turnUsername = savedPreferences.turnUsername,
                     turnPassword = savedTurnPassword.orEmpty(),
                     codecPriority = savedPreferences.codecPriority,
+                    agcEnabled = savedPreferences.agcEnabled,
+                    noiseSuppressionEnabled = savedPreferences.noiseSuppressionEnabled,
+                    echoCancellationEnabled = savedPreferences.echoCancellationEnabled,
+                    micGainDb = savedPreferences.micGainDb,
+                    playbackGainDb = savedPreferences.playbackGainDb,
                     isLoading = false,
                 )
             } else {
@@ -169,6 +179,26 @@ class SettingsViewModel(
         _uiState.value = _uiState.value.copy(codecPriority = current, saveError = null, saveSucceeded = false)
     }
 
+    fun onAgcEnabledChanged(value: Boolean) {
+        _uiState.value = _uiState.value.copy(agcEnabled = value, saveError = null, saveSucceeded = false)
+    }
+
+    fun onNoiseSuppressionEnabledChanged(value: Boolean) {
+        _uiState.value = _uiState.value.copy(noiseSuppressionEnabled = value, saveError = null, saveSucceeded = false)
+    }
+
+    fun onEchoCancellationEnabledChanged(value: Boolean) {
+        _uiState.value = _uiState.value.copy(echoCancellationEnabled = value, saveError = null, saveSucceeded = false)
+    }
+
+    fun onMicGainDbChanged(value: Float) {
+        _uiState.value = _uiState.value.copy(micGainDb = value, saveError = null, saveSucceeded = false)
+    }
+
+    fun onPlaybackGainDbChanged(value: Float) {
+        _uiState.value = _uiState.value.copy(playbackGainDb = value, saveError = null, saveSucceeded = false)
+    }
+
     fun save() {
         val state = _uiState.value
         if (!state.isFormValid) {
@@ -192,6 +222,11 @@ class SettingsViewModel(
             turnUsername = state.turnUsername.trim(),
             turnPassword = state.turnPassword,
             codecPriority = state.codecPriority,
+            agcEnabled = state.agcEnabled,
+            noiseSuppressionEnabled = state.noiseSuppressionEnabled,
+            echoCancellationEnabled = state.echoCancellationEnabled,
+            micGainDb = state.micGainDb,
+            playbackGainDb = state.playbackGainDb,
         )
 
         _uiState.value = state.copy(isSaving = true, saveError = null, saveSucceeded = false)
