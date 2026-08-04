@@ -3,6 +3,23 @@
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/).
 Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
+## [0.2.2]
+
+### Cambiado
+
+- Pulido visual general con la identidad de marca (navy/cian) en el resto
+  de pantallas:
+  - Dialer: teclado numérico con botones circulares (con letras ABC/DEF/…
+    debajo de cada número, como un teléfono real) y botón de llamar
+    circular destacado en el color primario, en vez de botones rectangulares.
+  - Configuración: los campos se agrupan en tarjetas por sección ("Cuenta
+    SIP", "NAT y conectividad", "Prioridad de códecs") en vez de un
+    formulario plano con divisores.
+  - Historial: cada llamada es una tarjeta con un punto de color indicando
+    el resultado (verde=completada, rojo=perdida, amarillo=rechazada,
+    gris=cancelada), y también usa el número/usuario en vez de la URI SIP
+    cruda cuando no hay nombre de contacto.
+
 ## [0.2.1]
 
 ### Corregido

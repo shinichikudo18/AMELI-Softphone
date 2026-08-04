@@ -2,15 +2,22 @@
 
 package cl.agnov.ameli.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -22,6 +29,8 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.agnov.ameli.sip.model.CallDirection
@@ -68,13 +77,16 @@ fun HistoryScreen(
             return@Scaffold
         }
 
-        LazyColumn(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier.padding(innerPadding).fillMaxSize().padding(horizontal = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(vertical = 8.dp),
+        ) {
             items(history, key = { it.id }) { record ->
                 CallHistoryRow(
                     record = record,
                     onRedial = { requestRedial(record) },
                 )
-                HorizontalDivider()
             }
         }
     }
@@ -82,31 +94,55 @@ fun HistoryScreen(
 
 @Composable
 private fun CallHistoryRow(record: CallHistoryRecord, onRedial: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
     ) {
-        Column(
-            modifier = Modifier.weight(1f),
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = record.remoteDisplayName ?: record.remoteAddress,
-                style = MaterialTheme.typography.bodyLarge,
+            Box(
+                modifier = Modifier
+                    .size(10.dp)
+                    .clip(CircleShape)
+                    .background(record.result.indicatorColor()),
             )
-            Text(
-                text = "${record.direction.toDisplayText()} · ${record.result.toDisplayText()} · ${formatDuration(record.durationSeconds)}",
-                style = MaterialTheme.typography.bodySmall,
-            )
-            Text(
-                text = formatDate(record.startDateEpochSeconds),
-                style = MaterialTheme.typography.bodySmall,
-            )
-        }
-        IconButton(onClick = onRedial) {
-            Text("📞")
+            Column(
+                modifier = Modifier.weight(1f).padding(start = 12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                Text(
+                    text = record.remoteDisplayName ?: friendlyAddress(record.remoteAddress),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
+                Text(
+                    text = "${record.direction.toDisplayText()} · ${record.result.toDisplayText()} · ${formatDuration(record.durationSeconds)}",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Text(
+                    text = formatDate(record.startDateEpochSeconds),
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            IconButton(onClick = onRedial) {
+                Text("📞")
+            }
         }
     }
+}
+
+private fun friendlyAddress(remoteAddress: String): String {
+    val withoutScheme = remoteAddress.substringAfter(':', remoteAddress)
+    return withoutScheme.substringBefore('@').ifBlank { remoteAddress }
+}
+
+private fun CallResult.indicatorColor(): Color = when (this) {
+    CallResult.SUCCESS -> Color(0xFF22C55E)
+    CallResult.MISSED -> Color(0xFFEF4444)
+    CallResult.DECLINED -> Color(0xFFFACC15)
+    CallResult.ABORTED -> Color(0xFF94A3B8)
 }
 
 private fun formatDate(epochSeconds: Long): String =
