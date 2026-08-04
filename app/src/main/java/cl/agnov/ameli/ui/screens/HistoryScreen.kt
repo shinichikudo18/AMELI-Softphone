@@ -4,12 +4,14 @@ package cl.agnov.ameli.ui.screens
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -32,10 +34,15 @@ import java.util.Date
 
 @Composable
 fun HistoryScreen(
+    onCallStarted: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HistoryViewModel = viewModel(factory = ViewModelFactories.history),
 ) {
     val history by viewModel.history.collectAsState()
+    val requestRedial = rememberCallPermissionLauncher<CallHistoryRecord> { record ->
+        viewModel.redial(record)
+        onCallStarted()
+    }
 
     Scaffold(
         modifier = modifier,
@@ -63,7 +70,10 @@ fun HistoryScreen(
 
         LazyColumn(modifier = Modifier.padding(innerPadding).fillMaxSize()) {
             items(history, key = { it.id }) { record ->
-                CallHistoryRow(record)
+                CallHistoryRow(
+                    record = record,
+                    onRedial = { requestRedial(record) },
+                )
                 HorizontalDivider()
             }
         }
@@ -71,23 +81,31 @@ fun HistoryScreen(
 }
 
 @Composable
-private fun CallHistoryRow(record: CallHistoryRecord) {
-    Column(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+private fun CallHistoryRow(record: CallHistoryRecord, onRedial: () -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = record.remoteDisplayName ?: record.remoteAddress,
-            style = MaterialTheme.typography.bodyLarge,
-        )
-        Text(
-            text = "${record.direction.toDisplayText()} · ${record.result.toDisplayText()} · ${formatDuration(record.durationSeconds)}",
-            style = MaterialTheme.typography.bodySmall,
-        )
-        Text(
-            text = formatDate(record.startDateEpochSeconds),
-            style = MaterialTheme.typography.bodySmall,
-        )
+        Column(
+            modifier = Modifier.weight(1f),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Text(
+                text = record.remoteDisplayName ?: record.remoteAddress,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+                text = "${record.direction.toDisplayText()} · ${record.result.toDisplayText()} · ${formatDuration(record.durationSeconds)}",
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Text(
+                text = formatDate(record.startDateEpochSeconds),
+                style = MaterialTheme.typography.bodySmall,
+            )
+        }
+        IconButton(onClick = onRedial) {
+            Text("📞")
+        }
     }
 }
 

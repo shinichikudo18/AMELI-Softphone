@@ -31,6 +31,7 @@ fun IncomingCallScreen(
     viewModel: IncomingCallViewModel = viewModel(factory = ViewModelFactories.incomingCall),
 ) {
     val callState by viewModel.callState.collectAsState()
+    val isRingerSilenced by viewModel.isRingerSilenced.collectAsState()
 
     LaunchedEffect(callState?.connectionState) {
         when (callState?.connectionState) {
@@ -59,6 +60,15 @@ fun IncomingCallScreen(
                 text = state?.remoteDisplayName ?: state?.remoteAddress ?: "",
                 style = MaterialTheme.typography.headlineSmall,
             )
+
+            if (!isRingerSilenced) {
+                OutlinedButton(
+                    onClick = viewModel::silenceRinger,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text("Silenciar timbre")
+                }
+            }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),

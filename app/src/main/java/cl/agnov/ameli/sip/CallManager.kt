@@ -1,6 +1,7 @@
 package cl.agnov.ameli.sip
 
 import cl.agnov.ameli.data.CallHistoryRepository
+import cl.agnov.ameli.data.DoNotDisturbState
 import cl.agnov.ameli.sip.model.CallConnectionState
 import cl.agnov.ameli.sip.model.CallDirection
 import cl.agnov.ameli.sip.model.CallHistoryRecord
@@ -28,6 +29,7 @@ interface CallController {
     fun answer(): Result<Unit>
     fun decline(): Result<Unit>
     fun hangup()
+    fun silenceRinger()
     fun toggleMute()
     fun toggleSpeaker()
     fun sendDtmf(digit: Char): Result<Unit>
@@ -41,6 +43,7 @@ interface CallController {
 class CallManager(
     private val audioRouteController: AudioRouteController,
     private val historyRepository: CallHistoryRepository,
+    private val doNotDisturbState: DoNotDisturbState,
 ) : CallController {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
@@ -51,12 +54,15 @@ class CallManager(
     private val _callQualityStats = MutableStateFlow<CallQualityStats?>(null)
     override val callQualityStats: StateFlow<CallQualityStats?> = _callQualityStats.asStateFlow()
 
+    private val _doNotDisturbEnabled = MutableStateFlow(false)
+
     private var activeCall: Call? = null
     private var lastKnownState: Call.State? = null
 
     init {
         LinphoneManager.onCallStateChanged = { call, state, _ -> onCallStateChanged(call, state) }
         LinphoneManager.onCallStatsUpdated = { call, stats -> onCallStatsUpdated(call, stats) }
+        scope.launch { doNotDisturbState.isEnabled.collect { _doNotDisturbEnabled.value = it } }
     }
 
     override fun call(addressOrNumber: String): Result<Unit> {
@@ -88,6 +94,10 @@ class CallManager(
         activeCall?.terminate()
     }
 
+    override fun silenceRinger() {
+        LinphoneManager.core.stopRinging()
+    }
+
     override fun toggleMute() {
         audioRouteController.setMicMuted(!audioRouteController.isMicMuted())
         refreshCallState()
@@ -107,6 +117,14 @@ class CallManager(
     override fun currentDurationSeconds(): Int = activeCall?.duration ?: 0
 
     private fun onCallStateChanged(call: Call, state: Call.State) {
+        if (state == Call.State.IncomingReceived && _doNotDisturbEnabled.value) {
+            // No Molestar: se rechaza antes de timbrar/notificar. La llamada
+            // igual queda registrada en el historial cuando llegue Released,
+            // ya que recordHistory() usa el `call` recibido, no `activeCall`.
+            call.decline(Reason.Busy)
+            return
+        }
+
         activeCall = call
         lastKnownState = state
         _callState.value = toUiState(call, state)

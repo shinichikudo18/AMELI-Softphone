@@ -7,6 +7,16 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Añadido
 
+- Volver a llamar desde el Historial con un tap (ícono de llamada por fila),
+  reutilizando la misma verificación de permiso `RECORD_AUDIO` que el
+  Dialer (extraída a `rememberCallPermissionLauncher`, reutilizable).
+- Silenciar el timbre en la pantalla de llamada entrante sin colgar
+  (`Core.stopRinging()`), sin afectar la posibilidad de contestar o rechazar
+  después.
+- Modo No Molestar: mientras está activo (switch en la pantalla principal),
+  `CallManager` rechaza automáticamente las llamadas entrantes
+  (`Call.decline(Reason.Busy)`) antes de timbrar o notificar; igual quedan
+  registradas en el historial como rechazadas.
 - Aviso de actualización: al abrir la app se consulta la última GitHub
   Release (`UpdateChecker`, vía `org.json` — sin dependencias nuevas) y, si
   hay una versión más nueva, se muestra un diálogo para descargarla

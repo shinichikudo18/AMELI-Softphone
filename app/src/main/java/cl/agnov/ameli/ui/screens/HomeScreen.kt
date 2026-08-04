@@ -3,7 +3,6 @@
 package cl.agnov.ameli.ui.screens
 
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -23,6 +22,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -37,10 +37,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.agnov.ameli.R
 import cl.agnov.ameli.sip.LinphoneManager
 import cl.agnov.ameli.sip.model.SipRegistrationState
+import cl.agnov.ameli.ui.viewmodel.DoNotDisturbViewModel
 import cl.agnov.ameli.ui.viewmodel.UpdateViewModel
 import cl.agnov.ameli.ui.viewmodel.ViewModelFactories
 
@@ -51,9 +53,11 @@ fun HomeScreen(
     onOpenHistory: () -> Unit,
     modifier: Modifier = Modifier,
     updateViewModel: UpdateViewModel = viewModel(factory = ViewModelFactories.update),
+    doNotDisturbViewModel: DoNotDisturbViewModel = viewModel(factory = ViewModelFactories.doNotDisturb),
 ) {
     val registrationState by LinphoneManager.registrationState.collectAsState()
     val availableUpdate by updateViewModel.availableUpdate.collectAsState()
+    val isDoNotDisturbEnabled by doNotDisturbViewModel.isEnabled.collectAsState()
     val context = LocalContext.current
 
     availableUpdate?.let { release ->
@@ -64,7 +68,7 @@ fun HomeScreen(
             confirmButton = {
                 TextButton(onClick = {
                     val url = release.apkDownloadUrl ?: release.releaseUrl
-                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                    context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
                     updateViewModel.dismiss()
                 }) {
                     Text("Descargar")
@@ -100,6 +104,22 @@ fun HomeScreen(
             )
 
             RegistrationStatusChip(registrationState)
+
+            Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("No molestar", style = MaterialTheme.typography.bodyLarge)
+                    Switch(
+                        checked = isDoNotDisturbEnabled,
+                        onCheckedChange = doNotDisturbViewModel::setEnabled,
+                    )
+                }
+            }
 
             Button(
                 onClick = onOpenDialer,

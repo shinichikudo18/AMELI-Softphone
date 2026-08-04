@@ -47,7 +47,17 @@ object ViewModelFactories {
     val history = viewModelFactory {
         initializer {
             val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as AmeliApplication
-            HistoryViewModel(repository = app.container.callHistoryRepository)
+            HistoryViewModel(
+                repository = app.container.callHistoryRepository,
+                callController = app.container.callManager,
+            )
+        }
+    }
+
+    val doNotDisturb = viewModelFactory {
+        initializer {
+            val app = this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as AmeliApplication
+            DoNotDisturbViewModel(doNotDisturbState = app.container.doNotDisturbRepository)
         }
     }
 

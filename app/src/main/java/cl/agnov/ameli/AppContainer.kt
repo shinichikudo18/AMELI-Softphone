@@ -2,6 +2,8 @@ package cl.agnov.ameli
 
 import android.content.Context
 import cl.agnov.ameli.data.CallHistoryRepository
+import cl.agnov.ameli.data.DoNotDisturbRepository
+import cl.agnov.ameli.data.DoNotDisturbState
 import cl.agnov.ameli.data.PreferencesRepository
 import cl.agnov.ameli.data.RoomCallHistoryRepository
 import cl.agnov.ameli.data.SecureCredentialStore
@@ -24,7 +26,8 @@ class AppContainer(context: Context) {
     val sipAccountManager = SipAccountManager()
     val callHistoryRepository: CallHistoryRepository =
         RoomCallHistoryRepository(AmeliDatabase.getInstance(context.applicationContext).callHistoryDao())
-    val callManager = CallManager(AudioRouteManager(), callHistoryRepository)
+    val doNotDisturbRepository: DoNotDisturbState = DoNotDisturbRepository(context.applicationContext)
+    val callManager = CallManager(AudioRouteManager(), callHistoryRepository, doNotDisturbRepository)
     val updateChecker = UpdateChecker(BuildConfig.VERSION_NAME)
     val updateDismissalStore = UpdateDismissalStore(context.applicationContext)
 }

@@ -61,7 +61,9 @@ fun AmeliNavHost(
             )
         }
         composable(AmeliDestinations.HISTORY) {
-            HistoryScreen()
+            HistoryScreen(
+                onCallStarted = { navController.navigate(AmeliDestinations.ACTIVE_CALL) },
+            )
         }
         composable(AmeliDestinations.SETTINGS) {
             SettingsScreen(
