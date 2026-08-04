@@ -3,9 +3,12 @@ package cl.agnov.ameli.sip
 import cl.agnov.ameli.sip.model.AudioCodec
 import cl.agnov.ameli.sip.model.SipAccountConfig
 import cl.agnov.ameli.sip.model.SipTransport
+import org.linphone.core.Account
+import org.linphone.core.AccountListenerStub
 import org.linphone.core.Core
 import org.linphone.core.Factory
 import org.linphone.core.MediaEncryption
+import org.linphone.core.MessageWaitingIndication
 import org.linphone.core.PayloadType
 import org.linphone.core.TransportType
 
@@ -65,6 +68,11 @@ class SipAccountManager : AccountConfigurator {
             core.addAuthInfo(authInfo)
 
             val account = core.createAccount(accountParams)
+            account.addListener(object : AccountListenerStub() {
+                override fun onMessageWaitingIndicationChanged(account: Account, mwi: MessageWaitingIndication) {
+                    LinphoneManager.updateNewVoicemailCount(mwi.nbNew)
+                }
+            })
             core.addAccount(account)
             core.defaultAccount = account
 

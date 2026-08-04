@@ -40,6 +40,7 @@ enum class CallConnectionState {
 }
 
 data class CallUiState(
+    val callId: String,
     val direction: CallDirection,
     val remoteAddress: String,
     val remoteDisplayName: String?,

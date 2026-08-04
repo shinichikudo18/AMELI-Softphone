@@ -7,8 +7,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import cl.agnov.ameli.sip.model.CallConnectionState
 import cl.agnov.ameli.sip.model.CallQualityStats
+import cl.agnov.ameli.sip.model.CallUiState
 import cl.agnov.ameli.sip.model.IceConnectionState
 import cl.agnov.ameli.ui.viewmodel.ActiveCallViewModel
 import cl.agnov.ameli.ui.viewmodel.ViewModelFactories
@@ -42,8 +47,12 @@ fun ActiveCallScreen(
     viewModel: ActiveCallViewModel = viewModel(factory = ViewModelFactories.activeCall),
 ) {
     val callState by viewModel.uiState.collectAsState()
+    val secondaryCallState by viewModel.secondaryCallState.collectAsState()
     val qualityStats by viewModel.qualityStats.collectAsState()
+    val actionError by viewModel.actionError.collectAsState()
     var showDialpad by remember { mutableStateOf(false) }
+    var showSecondCallInput by remember { mutableStateOf(false) }
+    var showTransferInput by remember { mutableStateOf(false) }
 
     LaunchedEffect(callState?.connectionState) {
         if (callState == null || callState?.connectionState == CallConnectionState.ENDED) {
@@ -81,6 +90,17 @@ fun ActiveCallScreen(
 
             qualityStats?.let { QualityStatsRow(it) }
 
+            secondaryCallState?.let { secondary ->
+                SecondaryCallCard(
+                    secondary = secondary,
+                    onAnswer = viewModel::answerSecondary,
+                    onDecline = viewModel::declineSecondary,
+                    onSwap = viewModel::swapCalls,
+                    onHangup = viewModel::hangupSecondary,
+                    onMerge = viewModel::completeConsultativeTransfer,
+                )
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -91,6 +111,54 @@ fun ActiveCallScreen(
                 OutlinedButton(onClick = viewModel::toggleSpeaker, modifier = Modifier.weight(1f)) {
                     Text(if (state.isSpeakerOn) "Altavoz activado" else "Altavoz")
                 }
+            }
+
+            if (secondaryCallState == null) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(
+                        onClick = {
+                            showSecondCallInput = !showSecondCallInput
+                            showTransferInput = false
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Segunda llamada")
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            showTransferInput = !showTransferInput
+                            showSecondCallInput = false
+                        },
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text("Transferir")
+                    }
+                }
+            }
+
+            if (showSecondCallInput) {
+                AddressInputRow(
+                    label = "Llamar a",
+                    confirmLabel = "Llamar",
+                    onConfirm = {
+                        viewModel.startSecondCall(it)
+                        showSecondCallInput = false
+                    },
+                )
+            }
+
+            if (showTransferInput) {
+                AddressInputRow(
+                    label = "Transferir a",
+                    confirmLabel = "Transferir",
+                    onConfirm = {
+                        viewModel.transferForegroundTo(it)
+                        showTransferInput = false
+                    },
+                )
             }
 
             OutlinedButton(
@@ -115,11 +183,95 @@ fun ActiveCallScreen(
                 }
             }
 
+            actionError?.let { error ->
+                Text(text = error, color = MaterialTheme.colorScheme.error)
+            }
+
             Button(
                 onClick = viewModel::hangup,
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text("Colgar")
+            }
+        }
+    }
+}
+
+@Composable
+private fun AddressInputRow(label: String, confirmLabel: String, onConfirm: (String) -> Unit) {
+    var value by remember { mutableStateOf("") }
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        OutlinedTextField(
+            value = value,
+            onValueChange = { value = it },
+            label = { Text(label) },
+            modifier = Modifier.weight(1f),
+            singleLine = true,
+        )
+        Button(onClick = { if (value.isNotBlank()) onConfirm(value.trim()) }) {
+            Text(confirmLabel)
+        }
+    }
+}
+
+@Composable
+private fun SecondaryCallCard(
+    secondary: CallUiState,
+    onAnswer: () -> Unit,
+    onDecline: () -> Unit,
+    onSwap: () -> Unit,
+    onHangup: () -> Unit,
+    onMerge: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Text(
+                text = secondary.remoteDisplayName ?: secondary.remoteAddress,
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+                text = secondary.connectionState.toDisplayMessage(),
+                style = MaterialTheme.typography.bodySmall,
+            )
+            HorizontalDivider()
+
+            if (secondary.connectionState == CallConnectionState.INCOMING_RINGING) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(onClick = onDecline, modifier = Modifier.weight(1f)) {
+                        Text("Rechazar")
+                    }
+                    Button(onClick = onAnswer, modifier = Modifier.weight(1f)) {
+                        Text("Contestar")
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    OutlinedButton(onClick = onSwap, modifier = Modifier.weight(1f)) {
+                        Text("Intercambiar")
+                    }
+                    OutlinedButton(onClick = onHangup, modifier = Modifier.weight(1f)) {
+                        Text("Colgar esta")
+                    }
+                }
+                OutlinedButton(onClick = onMerge, modifier = Modifier.fillMaxWidth()) {
+                    Text("Unir llamadas")
+                }
             }
         }
     }

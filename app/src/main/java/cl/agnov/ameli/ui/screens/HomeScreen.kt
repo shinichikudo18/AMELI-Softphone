@@ -56,6 +56,7 @@ fun HomeScreen(
     doNotDisturbViewModel: DoNotDisturbViewModel = viewModel(factory = ViewModelFactories.doNotDisturb),
 ) {
     val registrationState by LinphoneManager.registrationState.collectAsState()
+    val newVoicemailCount by LinphoneManager.newVoicemailCount.collectAsState()
     val availableUpdate by updateViewModel.availableUpdate.collectAsState()
     val isDoNotDisturbEnabled by doNotDisturbViewModel.isEnabled.collectAsState()
     val context = LocalContext.current
@@ -104,6 +105,14 @@ fun HomeScreen(
             )
 
             RegistrationStatusChip(registrationState)
+
+            if (newVoicemailCount > 0) {
+                Text(
+                    text = "Tienes $newVoicemailCount mensaje(s) de voz nuevo(s)",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+            }
 
             Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                 Row(

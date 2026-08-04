@@ -36,6 +36,10 @@ object LinphoneManager {
     private val _registrationState = MutableStateFlow(SipRegistrationState.NOT_REGISTERED)
     val registrationState: StateFlow<SipRegistrationState> = _registrationState.asStateFlow()
 
+    private val _newVoicemailCount = MutableStateFlow(0)
+    /** Cantidad de mensajes de voz nuevos, según el último aviso MWI recibido de la cuenta. */
+    val newVoicemailCount: StateFlow<Int> = _newVoicemailCount.asStateFlow()
+
     /** Callback interno usado por [CallManager] para recibir cambios de estado de llamada. */
     var onCallStateChanged: ((Call, Call.State, String?) -> Unit)? = null
 
@@ -47,6 +51,11 @@ object LinphoneManager {
 
     val core: Core
         get() = requireNotNull(coreInstance) { "LinphoneManager.start() no ha sido llamado." }
+
+    /** Llamado por [SipAccountManager] cuando la cuenta reporta un cambio de MWI. */
+    fun updateNewVoicemailCount(count: Int) {
+        _newVoicemailCount.value = count
+    }
 
     fun start(context: Context) {
         if (coreInstance != null) return

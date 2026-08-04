@@ -7,6 +7,19 @@ Este proyecto sigue [Semantic Versioning](https://semver.org/lang/es/).
 
 ### Añadido
 
+- Espera + segunda llamada: `CallManager` soporta hasta dos llamadas
+  simultáneas por Call-ID SIP estable (`Core.getCalls()`/pausa/reanuda vía
+  `Call.pause()`/`Call.resume()`). Nuevo `secondaryCallState` en
+  `CallController`, mostrado en `ActiveCallScreen` con acciones contextuales
+  (contestar/rechazar si está timbrando, o intercambiar/colgar/unir si está
+  en espera). Al colgar la llamada en primer plano, la otra se reanuda
+  automáticamente si estaba en espera.
+- Transferencia de llamada: ciega (`Call.transferTo(Address)`, no la versión
+  deprecada `transfer(String)`) y consultiva (`Call.transferToAnother`,
+  uniendo la llamada en espera con la de primer plano).
+- Indicador de buzón de voz (MWI): `AccountListenerStub.onMessageWaitingIndicationChanged`
+  actualiza un contador visible en la pantalla principal cuando el PBX
+  reporta mensajes de voz nuevos.
 - Volver a llamar desde el Historial con un tap (ícono de llamada por fila),
   reutilizando la misma verificación de permiso `RECORD_AUDIO` que el
   Dialer (extraída a `rememberCallPermissionLauncher`, reutilizable).
